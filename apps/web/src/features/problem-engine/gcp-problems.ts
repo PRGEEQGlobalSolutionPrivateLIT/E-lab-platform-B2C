@@ -1,0 +1,236 @@
+import type { PracticeProblem } from './types';
+
+/* =========================================================
+   GOOGLE CLOUD PLATFORM PRACTICE PROBLEMS
+   Technology: gcp | Workspace: code | Language: python
+   Deterministic offline stdin/stdout exercises.
+   No Google Cloud credentials, SDK, CLI or network access.
+   Runtime: elab-judge-python:latest
+========================================================= */
+
+export const gcpProblems: PracticeProblem[] = [
+  /* 1. VALIDATE GOOGLE CLOUD REGION */
+  {
+    slug: "gcp-validate-region",
+    title: "Validate Google Cloud Region",
+    technologySlug: 'gcp',
+    difficulty: "Easy",
+    workspaceType: 'code',
+    defaultLanguage: 'python',
+    shortDescription: "Validate a Google Cloud region against an input allowlist.",
+    problemStatement: "Read a comma-separated allowlist of Google Cloud regions and a requested region. Print VALID if the requested region exactly matches an entry, otherwise INVALID. Trim surrounding whitespace from the entries and requested value. Comparison is case-sensitive; an empty requested region is INVALID. The list is provided by input, not a built-in live region catalog.",
+    inputFormat: "Line 1: comma-separated allowed regions.\nLine 2: requested region.\n\nExample:\nasia-south1,us-central1,europe-west1\nasia-south1",
+    outputFormat: "VALID or INVALID.\n\nExample output:\nVALID",
+    constraints: ["Read exactly two lines from stdin.", "Trim surrounding whitespace.", "Compare case-sensitively.", "No Google Cloud API access."],
+    notes: ["Allowlist entries are supplied only for this exercise."],
+    skills: ["Google Cloud", "Regions", "Python", "Strings", "Validation"],
+    estimatedMinutes: 10,
+    sampleTests: [
+      { id: "gcp-validate-region-sample-1", title: "Allowed region", input: "asia-south1,us-central1,europe-west1\nasia-south1\n", expectedOutput: "VALID" },
+      { id: "gcp-validate-region-sample-2", title: "Unknown region", input: "asia-south1,us-central1\neurope-west1\n", expectedOutput: "INVALID" },
+    ],
+    starterCode: "regions = input().split(',')\nrequested_region = input()\n\n# Strip whitespace and print VALID or INVALID\n",
+  },
+  /* 2. CLASSIFY GOOGLE CLOUD SERVICE */
+  {
+    slug: "gcp-classify-service",
+    title: "Classify Google Cloud Service",
+    technologySlug: 'gcp',
+    difficulty: "Easy",
+    workspaceType: 'code',
+    defaultLanguage: 'python',
+    shortDescription: "Classify a supplied Google Cloud service label.",
+    problemStatement: "Read one service label and print its category according to this exercise-only mapping:\n\nComputeEngine -> COMPUTE\nCloudRun -> COMPUTE\nCloudStorage -> STORAGE\nPersistentDisk -> STORAGE\nCloudSQL -> DATABASE\nFirestore -> DATABASE\nVPC -> NETWORK\nCloudLoadBalancing -> NETWORK\n\nPrint UNKNOWN for every other value. Matching is case-sensitive and the input is trimmed.",
+    inputFormat: "One service label.\n\nExample:\nCloudStorage",
+    outputFormat: "COMPUTE, STORAGE, DATABASE, NETWORK, or UNKNOWN.\n\nExample output:\nSTORAGE",
+    constraints: ["Use only the mapping given above.", "Case-sensitive matching.", "Do not contact Google Cloud."],
+    notes: ["Labels are simplified instructional names."],
+    skills: ["Google Cloud", "Services", "Python", "Dictionaries"],
+    estimatedMinutes: 10,
+    sampleTests: [
+      { id: "gcp-classify-service-sample-1", title: "Known service", input: "CloudStorage\n", expectedOutput: "STORAGE" },
+      { id: "gcp-classify-service-sample-2", title: "Unknown service", input: "UnknownService\n", expectedOutput: "UNKNOWN" },
+    ],
+    starterCode: "service = input().strip()\n\n# Look up the category and print it or UNKNOWN\n",
+  },
+  /* 3. PARSE GOOGLE CLOUD RESOURCE NAME */
+  {
+    slug: "gcp-parse-resource-name",
+    title: "Parse Google Cloud Resource Name",
+    technologySlug: 'gcp',
+    difficulty: "Easy",
+    workspaceType: 'code',
+    defaultLanguage: 'python',
+    shortDescription: "Extract project, zone and instance from a simplified resource path.",
+    problemStatement: "Parse a simplified Compute Engine instance resource name of the exact form:\n\nprojects/{projectId}/zones/{zone}/instances/{instanceName}\n\nAll literal markers must match exactly and each variable segment must be nonempty. Reject leading slashes, trailing slashes, or additional segments. Print the project ID, zone and instance name on separate lines for valid input, otherwise print INVALID.",
+    inputFormat: "One resource path.\n\nExample:\nprojects/demo-project/zones/asia-south1-a/instances/web-1",
+    outputFormat: "Three lines (project ID, zone, instance name) or INVALID.\n\nExample output:\ndemo-project\nasia-south1-a\nweb-1",
+    constraints: ["Simplified Compute Engine resource path grammar.", "Markers are case-sensitive.", "No API access."],
+    notes: ["This is an exercise path and is not a general parser for every Google Cloud full resource name."],
+    skills: ["Google Cloud", "Compute Engine", "Resource Names", "Python", "Parsing"],
+    estimatedMinutes: 14,
+    sampleTests: [
+      { id: "gcp-parse-resource-name-sample-1", title: "Valid instance path", input: "projects/demo-project/zones/asia-south1-a/instances/web-1\n", expectedOutput: "demo-project\nasia-south1-a\nweb-1" },
+      { id: "gcp-parse-resource-name-sample-2", title: "Invalid instance path", input: "projects/demo-project/regions/asia-south1/instances/web-1\n", expectedOutput: "INVALID" },
+    ],
+    starterCode: "resource_name = input().strip()\n\n# Parse the specified segments or print INVALID\n",
+  },
+  /* 4. CALCULATE COMPUTE ENGINE COST */
+  {
+    slug: "gcp-calculate-compute-cost",
+    title: "Calculate Compute Engine Cost",
+    technologySlug: 'gcp',
+    difficulty: "Easy",
+    workspaceType: 'code',
+    defaultLanguage: 'python',
+    shortDescription: "Calculate simulated Compute Engine usage from supplied integer rates.",
+    problemStatement: "Read three nonnegative integers: rate_cents_per_hour, hours_running, and instance_count. Calculate rate_cents_per_hour * hours_running * instance_count and print the resulting integer number of cents. Use only the input rate; this is not a live billing calculator.",
+    inputFormat: "One line: rate_cents_per_hour hours_running instance_count.\n\nExample:\n30 8 2",
+    outputFormat: "One integer representing total cost in cents.\n\nExample output:\n480",
+    constraints: ["0 <= each input <= 10^9.", "Use integer arithmetic.", "No pricing API."],
+    notes: ["Ignore reservations, discounts, disks, networking and taxes."],
+    skills: ["Google Cloud", "Compute Engine", "Python", "Arithmetic", "Cost"],
+    estimatedMinutes: 10,
+    sampleTests: [
+      { id: "gcp-calculate-compute-cost-sample-1", title: "Two instances", input: "30 8 2\n", expectedOutput: "480" },
+      { id: "gcp-calculate-compute-cost-sample-2", title: "No running hours", input: "30 0 2\n", expectedOutput: "0" },
+    ],
+    starterCode: "rate_cents, hours, instances = map(int, input().split())\n\n# Print the total cost in cents\n",
+  },
+  /* 5. VALIDATE CLOUD STORAGE BUCKET NAME */
+  {
+    slug: "gcp-validate-bucket-name",
+    title: "Validate Cloud Storage Bucket Name",
+    technologySlug: 'gcp',
+    difficulty: "Easy",
+    workspaceType: 'code',
+    defaultLanguage: 'python',
+    shortDescription: "Validate a bucket name using the simplified rules of this exercise.",
+    problemStatement: "Read a bucket name and print VALID only if it satisfies every rule of this **simplified exercise**:\n\n1. Length is 3 to 63 characters inclusive.\n2. Only lowercase ASCII letters (a-z), digits (0-9), hyphens (-) and underscores (_) are permitted.\n3. The first and final character must be a lowercase letter or digit.\n4. The value must not look like an IPv4 address (four decimal numbers separated by dots).\n\nOtherwise print INVALID. These rules intentionally do not cover all real Google Cloud bucket naming restrictions (for example names containing dots or brand-related restrictions).",
+    inputFormat: "One bucket name.\n\nExample:\ntraining-data-123",
+    outputFormat: "VALID or INVALID.\n\nExample output:\nVALID",
+    constraints: ["Apply exactly the simplified four rules above.", "Do not check global uniqueness.", "Do not contact Cloud Storage."],
+    notes: ["A real Google Cloud Storage bucket name may support other allowed patterns; do not use this exercise as a production validator."],
+    skills: ["Google Cloud", "Cloud Storage", "Bucket Names", "Python", "Validation"],
+    estimatedMinutes: 14,
+    sampleTests: [
+      { id: "gcp-validate-bucket-name-sample-1", title: "Valid name", input: "training-data-123\n", expectedOutput: "VALID" },
+      { id: "gcp-validate-bucket-name-sample-2", title: "Invalid uppercase name", input: "Training-Data\n", expectedOutput: "INVALID" },
+    ],
+    starterCode: "bucket_name = input().strip()\n\n# Validate against the simplified rules and print VALID or INVALID\n",
+  },
+  /* 6. SUM CLOUD STORAGE OBJECT SIZES */
+  {
+    slug: "gcp-sum-storage-object-sizes",
+    title: "Sum Cloud Storage Object Sizes",
+    technologySlug: 'gcp',
+    difficulty: "Easy",
+    workspaceType: 'code',
+    defaultLanguage: 'python',
+    shortDescription: "Sum simulated Cloud Storage object sizes.",
+    problemStatement: "Read a nonnegative integer N followed by N whitespace-separated nonnegative object sizes in bytes (possibly on multiple lines). Print the sum of all N sizes as one integer. If N is zero, print 0. This processes local input, not real Cloud Storage objects.",
+    inputFormat: "First line: N.\nFollowing line(s): N integer sizes.\n\nExample:\n4\n100 200 50 25",
+    outputFormat: "One integer total size in bytes.\n\nExample output:\n375",
+    constraints: ["0 <= N <= 100000.", "0 <= size <= 10^12.", "Read all N values.", "No GCP API."],
+    notes: ["Empty object list has size 0."],
+    skills: ["Google Cloud", "Cloud Storage", "Python", "Lists", "Aggregation"],
+    estimatedMinutes: 10,
+    sampleTests: [
+      { id: "gcp-sum-storage-object-sizes-sample-1", title: "Four objects", input: "4\n100 200 50 25\n", expectedOutput: "375" },
+      { id: "gcp-sum-storage-object-sizes-sample-2", title: "No objects", input: "0\n", expectedOutput: "0" },
+    ],
+    starterCode: "n = int(input())\n\n# Read n sizes and print their total\n",
+  },
+  /* 7. EVALUATE GOOGLE CLOUD IAM PERMISSION */
+  {
+    slug: "gcp-evaluate-iam-permission",
+    title: "Evaluate Google Cloud IAM Permission",
+    technologySlug: 'gcp',
+    difficulty: "Medium",
+    workspaceType: 'code',
+    defaultLanguage: 'python',
+    shortDescription: "Evaluate simplified IAM role permissions using a supplied permission table.",
+    problemStatement: "Input describes a simplified local role-to-permission mapping. First line: R (number of role definitions). Next R lines have the form role:permission1,permission2,... . The next line contains a role name; the final line contains the requested permission. Print ALLOWED if and only if the role exists and its comma-separated permission list contains the requested permission after trimming whitespace. Otherwise print DENIED. Matching is case-sensitive. No role inheritance, IAM conditions or resource hierarchy is modeled.",
+    inputFormat: "Line 1: R.\nNext R lines: role:comma-separated permissions.\nNext line: assigned role.\nFinal line: permission to check.\n\nExample:\n2\nviewer:storage.objects.get,storage.objects.list\neditor:storage.objects.get,storage.objects.create\nviewer\nstorage.objects.get",
+    outputFormat: "ALLOWED or DENIED.\n\nExample output:\nALLOWED",
+    constraints: ["0 <= R <= 100.", "Names and permissions are case-sensitive.", "Use only provided definitions.", "No Google Cloud IAM API."],
+    notes: ["This is a simplified role-permission exercise; real IAM permission decisions depend on additional factors."],
+    skills: ["Google Cloud", "IAM", "Python", "Dictionaries", "Authorization"],
+    estimatedMinutes: 18,
+    sampleTests: [
+      { id: "gcp-evaluate-iam-permission-sample-1", title: "Role permits action", input: "2\nviewer:storage.objects.get,storage.objects.list\neditor:storage.objects.get,storage.objects.create\nviewer\nstorage.objects.get\n", expectedOutput: "ALLOWED" },
+      { id: "gcp-evaluate-iam-permission-sample-2", title: "Role does not permit action", input: "1\nviewer:storage.objects.get,storage.objects.list\nviewer\nstorage.objects.delete\n", expectedOutput: "DENIED" },
+    ],
+    starterCode: "role_count = int(input())\n\n# Read role definitions, assigned role, and requested permission\n# Print ALLOWED or DENIED\n",
+  },
+  /* 8. DETECT OVERLAPPING VPC SUBNETS */
+  {
+    slug: "gcp-detect-overlapping-subnets",
+    title: "Detect Overlapping VPC Subnets",
+    technologySlug: 'gcp',
+    difficulty: "Medium",
+    workspaceType: 'code',
+    defaultLanguage: 'python',
+    shortDescription: "Determine whether two IPv4 CIDR subnet ranges overlap.",
+    problemStatement: "Read two IPv4 CIDR subnet descriptions, one per line. Print OVERLAP when the represented IPv4 address ranges share any address, otherwise print NO_OVERLAP. Inputs are valid IPv4 CIDR strings. The network ranges are determined by their prefix lengths (host bits may be set in the supplied addresses). You may use Python standard library ipaddress; no cloud networking requests are needed.",
+    inputFormat: "Line 1: first IPv4 CIDR.\nLine 2: second IPv4 CIDR.\n\nExample:\n10.0.0.0/24\n10.0.0.128/25",
+    outputFormat: "OVERLAP or NO_OVERLAP.\n\nExample output:\nOVERLAP",
+    constraints: ["Both inputs are valid IPv4 CIDR.", "Prefixes range from /0 to /32.", "Use ipaddress.ip_network(value, strict=False) if desired.", "No GCP API."],
+    notes: ["This models address range overlaps, not VPC routing rules."],
+    skills: ["Google Cloud", "VPC", "Subnets", "Python", "IP Addresses"],
+    estimatedMinutes: 17,
+    sampleTests: [
+      { id: "gcp-detect-overlapping-subnets-sample-1", title: "Nested subnet", input: "10.0.0.0/24\n10.0.0.128/25\n", expectedOutput: "OVERLAP" },
+      { id: "gcp-detect-overlapping-subnets-sample-2", title: "Disjoint subnet", input: "10.0.0.0/24\n10.0.1.0/24\n", expectedOutput: "NO_OVERLAP" },
+    ],
+    starterCode: "import ipaddress\n\nfirst = input().strip()\nsecond = input().strip()\n\n# Print OVERLAP or NO_OVERLAP\n",
+  },
+  /* 9. CALCULATE MANAGED INSTANCE GROUP TARGET */
+  {
+    slug: "gcp-calculate-mig-target",
+    title: "Calculate Managed Instance Group Target",
+    technologySlug: 'gcp',
+    difficulty: "Medium",
+    workspaceType: 'code',
+    defaultLanguage: 'python',
+    shortDescription: "Clamp a desired instance count between configured limits.",
+    problemStatement: "Read three integers min_instances, max_instances and requested_instances where 0 <= min_instances <= max_instances and requested_instances >= 0. Compute the value limited to the inclusive range [min_instances, max_instances]. Print the resulting integer. This is a simplified managed instance group scaling calculation, not an autoscaling policy simulator.",
+    inputFormat: "One line: min_instances max_instances requested_instances.\n\nExample:\n2 12 15",
+    outputFormat: "One integer: bounded target count.\n\nExample output:\n12",
+    constraints: ["0 <= min_instances <= max_instances <= 10^9.", "0 <= requested_instances <= 10^9.", "No Google Cloud API."],
+    notes: ["This intentionally models clamping only."],
+    skills: ["Google Cloud", "Managed Instance Groups", "Python", "Bounds", "Scaling"],
+    estimatedMinutes: 15,
+    sampleTests: [
+      { id: "gcp-calculate-mig-target-sample-1", title: "Above maximum", input: "2 12 15\n", expectedOutput: "12" },
+      { id: "gcp-calculate-mig-target-sample-2", title: "Within bounds", input: "2 12 6\n", expectedOutput: "6" },
+    ],
+    starterCode: "minimum, maximum, requested = map(int, input().split())\n\n# Print the bounded instance count\n",
+  },
+  /* 10. SIMULATE PUB/SUB MESSAGE BATCHES */
+  {
+    slug: "gcp-simulate-pubsub-batches",
+    title: "Simulate Pub/Sub Message Batches",
+    technologySlug: 'gcp',
+    difficulty: "Medium",
+    workspaceType: 'code',
+    defaultLanguage: 'python',
+    shortDescription: "Calculate the number of local worker batches for messages.",
+    problemStatement: "Given N pending messages and a positive batch capacity B, find the minimum number of worker batches needed if each batch handles at most B messages. Print 0 when N is 0; otherwise use ceiling division. This exercise simulates queue-style processing and does not attempt to represent the exact delivery semantics of Google Cloud Pub/Sub.",
+    inputFormat: "One line: N B.\n\nExample:\n23 10",
+    outputFormat: "One integer: minimum batch count.\n\nExample output:\n3",
+    constraints: ["0 <= N <= 10^18.", "1 <= B <= 10^18.", "Use integer arithmetic.", "No Pub/Sub API."],
+    notes: ["Batch size is a local exercise parameter."],
+    skills: ["Google Cloud", "Pub/Sub", "Python", "Simulation", "Ceiling Division"],
+    estimatedMinutes: 15,
+    sampleTests: [
+      { id: "gcp-simulate-pubsub-batches-sample-1", title: "Partial last batch", input: "23 10\n", expectedOutput: "3" },
+      { id: "gcp-simulate-pubsub-batches-sample-2", title: "Zero messages", input: "0 10\n", expectedOutput: "0" },
+    ],
+    starterCode: "messages, batch_size = map(int, input().split())\n\n# Print the minimum number of batches\n",
+  },
+];
+
+export function getGcpProblemBySlug(slug: string): PracticeProblem | undefined {
+  return gcpProblems.find((problem) => problem.slug === slug);
+}

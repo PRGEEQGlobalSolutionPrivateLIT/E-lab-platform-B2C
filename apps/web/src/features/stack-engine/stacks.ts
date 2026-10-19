@@ -178,7 +178,62 @@ export const stacks: StackDefinition[] = [
       'JavaScript',
       'C#',
       'ASP.NET Core',
-      'SQL',
+      'SQL Server',
+    ],
+
+    level: 'Beginner to Advanced',
+  },
+
+  /* =====================================================
+     JAVA FULL STACK
+  ===================================================== */
+
+  {
+    slug: 'java-fullstack',
+
+    domainSlug: 'full-stack',
+
+    name: 'Java Full Stack',
+
+    shortName: 'JAVA FULL STACK',
+
+    description:
+      'Build complete full-stack applications using Java, Spring Boot, modern frontend technologies and PostgreSQL.',
+
+    technologies: [
+      'HTML',
+      'CSS',
+      'JavaScript',
+      'Java',
+      'Spring Boot',
+      'PostgreSQL',
+    ],
+
+    level: 'Beginner to Advanced',
+  },
+
+  /* =====================================================
+     PHP FULL STACK
+  ===================================================== */
+
+  {
+    slug: 'php-fullstack',
+
+    domainSlug: 'full-stack',
+
+    name: 'PHP Full Stack',
+
+    shortName: 'PHP FULL STACK',
+
+    description:
+      'Build complete web applications using PHP, modern frontend technologies and MySQL.',
+
+    technologies: [
+      'HTML',
+      'CSS',
+      'JavaScript',
+      'PHP',
+      'MySQL',
     ],
 
     level: 'Beginner to Advanced',
@@ -338,6 +393,339 @@ export const stacks: StackDefinition[] = [
 
     level: 'Beginner to Advanced',
   },
+
+  /* =====================================================
+     CYBERSECURITY
+  ===================================================== */
+
+  {
+    slug: 'linux-security',
+
+    domainSlug: 'cybersecurity',
+
+    name: 'Linux Security',
+
+    shortName: 'LINUX SECURITY',
+
+    description:
+      'Secure Linux systems using permissions, access controls, auditing and system hardening.',
+
+    technologies: [
+      'Linux',
+      'Bash',
+      'OpenSSH',
+      'UFW',
+      'auditd',
+    ],
+
+    level: 'Beginner to Advanced',
+  },
+
+  {
+    slug: 'python-security',
+
+    domainSlug: 'cybersecurity',
+
+    name: 'Python for Cybersecurity',
+
+    shortName: 'PYTHON SECURITY',
+
+    description:
+      'Develop security automation, log analysis and cryptographic utilities using Python.',
+
+    technologies: [
+      'Python',
+      'Scapy',
+      'Cryptography',
+      'Requests',
+      'Bandit',
+    ],
+
+    level: 'Beginner to Advanced',
+  },
+
+  {
+    slug: 'network-security',
+
+    domainSlug: 'cybersecurity',
+
+    name: 'Network Security',
+
+    shortName: 'NETWORK SECURITY',
+
+    description:
+      'Analyze network traffic, detect threats and configure defensive network controls.',
+
+    technologies: [
+      'TCP/IP',
+      'Wireshark',
+      'Nmap',
+      'tcpdump',
+      'Suricata',
+      'Zeek',
+    ],
+
+    level: 'Beginner to Advanced',
+  },
+
+  {
+    slug: 'web-security',
+
+    domainSlug: 'cybersecurity',
+
+    name: 'Web Application Security',
+
+    shortName: 'WEB SECURITY',
+
+    description:
+      'Identify and remediate common web application vulnerabilities in isolated labs.',
+
+    technologies: [
+      'OWASP Top 10',
+      'OWASP ZAP',
+      'Burp Suite',
+      'OWASP Juice Shop',
+    ],
+
+    level: 'Beginner to Advanced',
+  },
+
+  {
+    slug: 'penetration-testing',
+
+    domainSlug: 'cybersecurity',
+
+    name: 'Penetration Testing',
+
+    shortName: 'PEN TESTING',
+
+    description:
+      'Practice authorized security testing and vulnerability verification in isolated environments.',
+
+    technologies: [
+      'Kali Linux',
+      'Nmap',
+      'Metasploit',
+      'OWASP Testing Guide',
+    ],
+
+    level: 'Intermediate to Advanced',
+  },
+
+  {
+    slug: 'soc-siem',
+
+    domainSlug: 'cybersecurity',
+
+    name: 'SOC & SIEM',
+
+    shortName: 'SOC & SIEM',
+
+    description:
+      'Investigate security events, correlate alerts and detect threats using SOC and SIEM tools.',
+
+    technologies: [
+      'Wazuh',
+      'Elastic Security',
+      'Splunk',
+      'Sigma',
+      'YARA',
+    ],
+
+    level: 'Intermediate to Advanced',
+  },
+
+  {
+    slug: 'digital-forensics',
+
+    domainSlug: 'cybersecurity',
+
+    name: 'Digital Forensics',
+
+    shortName: 'FORENSICS',
+
+    description:
+      'Collect and analyze digital evidence using forensic investigation tools and techniques.',
+
+    technologies: [
+      'Autopsy',
+      'Volatility 3',
+      'Wireshark',
+      'File Analysis',
+    ],
+
+    level: 'Intermediate to Advanced',
+  },
+
+  {
+    slug: 'cloud-security',
+
+    domainSlug: 'cybersecurity',
+
+    name: 'Cloud Security',
+
+    shortName: 'CLOUD SECURITY',
+
+    description:
+      'Secure cloud identities, configurations, workloads and audit trails.',
+
+    technologies: [
+      'AWS IAM',
+      'AWS CloudTrail',
+      'AWS Config',
+      'Azure Security',
+      'Terraform',
+    ],
+
+    level: 'Intermediate to Advanced',
+  },
+
+  {
+    slug: 'devsecops',
+
+    domainSlug: 'cybersecurity',
+
+    name: 'DevSecOps',
+
+    shortName: 'DEVSECOPS',
+
+    description:
+      'Integrate code, dependency, container and secret scanning into secure delivery pipelines.',
+
+    technologies: [
+      'Semgrep',
+      'Trivy',
+      'Gitleaks',
+      'OWASP Dependency-Check',
+      'GitHub Actions',
+    ],
+
+    level: 'Intermediate to Advanced',
+  },
+
+  {
+    slug: 'incident-response',
+
+    domainSlug: 'cybersecurity',
+
+    name: 'Incident Response',
+
+    shortName: 'INCIDENT RESPONSE',
+
+    description:
+      'Investigate security incidents and practice containment, recovery and reporting.',
+
+    technologies: [
+      'MITRE ATT&CK',
+      'NIST',
+      'Velociraptor',
+      'TheHive',
+    ],
+
+    level: 'Intermediate to Advanced',
+  },
+
+  /* =====================================================
+     BLOCKCHAIN & WEB3
+  ===================================================== */
+
+  {
+    slug: 'ethereum-solidity',
+
+    domainSlug: 'blockchain-web3',
+
+    name: 'Ethereum & Solidity',
+
+    shortName: 'ETHEREUM & SOLIDITY',
+
+    description:
+      'Learn Solidity programming, smart contract development, deployment and testing using an isolated local Ethereum Virtual Machine.',
+
+    technologies: [
+      'Solidity',
+      'Ethereum',
+      'EVM',
+      'Smart Contracts',
+      'Foundry',
+      'Local Blockchain',
+    ],
+
+    level: 'Beginner to Advanced',
+  },
+
+  {
+    slug: 'web3-dapp-development',
+
+    domainSlug: 'blockchain-web3',
+
+    name: 'Web3 & DApp Development',
+
+    shortName: 'WEB3 & DAPP',
+
+    description:
+      'Build decentralized applications using JavaScript, TypeScript, ethers.js and locally deployed smart contracts.',
+
+    technologies: [
+      'JavaScript',
+      'TypeScript',
+      'Node.js',
+      'ethers.js',
+      'Web3',
+      'DApps',
+      'Local EVM',
+    ],
+
+    level: 'Beginner to Advanced',
+  },
+
+  {
+    slug: 'smart-contract-security',
+
+    domainSlug: 'blockchain-web3',
+
+    name: 'Smart Contract Security',
+
+    shortName: 'CONTRACT SECURITY',
+
+    description:
+      'Identify, test and remediate smart contract vulnerabilities using Solidity, Foundry tests and offline security analysis.',
+
+    technologies: [
+      'Solidity',
+      'Foundry',
+      'Smart Contract Auditing',
+      'Security Testing',
+      'Static Analysis',
+      'Local EVM',
+    ],
+
+    level: 'Intermediate to Advanced',
+  },
+
+  {
+    slug: 'defi-tokenization',
+
+    domainSlug: 'blockchain-web3',
+
+    name: 'DeFi & Tokenization',
+
+    shortName: 'DEFI & TOKENS',
+
+    description:
+      'Develop and test token standards, decentralized finance primitives and simulated on-chain financial workflows entirely on a local EVM.',
+
+    technologies: [
+      'Solidity',
+      'ERC-20',
+      'ERC-721',
+      'Tokenization',
+      'DeFi',
+      'Local EVM',
+    ],
+
+    level: 'Intermediate to Advanced',
+  },
+
 ];
 
 /* =========================================================

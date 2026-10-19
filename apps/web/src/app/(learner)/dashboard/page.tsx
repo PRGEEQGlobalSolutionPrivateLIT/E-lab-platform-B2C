@@ -42,6 +42,9 @@ import {
   SiJavascript,
   SiTypescript,
   SiGo,
+  SiPhp,
+  SiRuby,
+  SiSwift,
   SiHtml5,
   SiReact,
   SiAngular,
@@ -171,6 +174,24 @@ const technologies: Technology[] = [
     color: '#00ADD8',
   },
 
+  {
+    name: 'Ruby',
+    slug: 'ruby',
+    icon: <SiRuby />,
+    category: 'Programming Languages',
+    description: 'Dynamic object-oriented programming',
+    color: '#CC342D',
+  },
+
+  {
+    name: 'Swift',
+    slug: 'swift',
+    icon: <SiSwift />,
+    category: 'Programming Languages',
+    description: 'Apple application programming',
+    color: '#F05138',
+  },
+
   /* =====================================================
      FRONTEND
   ===================================================== */
@@ -235,6 +256,15 @@ const technologies: Technology[] = [
   ===================================================== */
 
   {
+    name: 'PHP',
+    slug: 'php',
+    icon: <SiPhp />,
+    category: 'Backend',
+    description: 'Server-side web programming',
+    color: '#777BB4',
+  },
+
+  {
     name: 'Node.js',
     slug: 'nodejs',
     icon: <SiNodedotjs />,
@@ -272,7 +302,7 @@ const technologies: Technology[] = [
 
   {
     name: 'ASP.NET Core',
-    slug: 'dotnet',
+    slug: 'aspnetcore',
     icon: <SiDotnet />,
     category: 'Backend',
     description: 'Microsoft backend framework',
@@ -330,7 +360,7 @@ const technologies: Technology[] = [
 
   {
     name: 'SQL',
-    slug: 'sql',
+    slug: 'sqlserver',
     icon: <Database />,
     category: 'Databases',
     description: 'Database query language',

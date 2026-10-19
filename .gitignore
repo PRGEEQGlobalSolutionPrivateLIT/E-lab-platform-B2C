@@ -52,3 +52,6 @@ generated/
 # Prisma local databases if ever used
 *.db
 *.db-journal
+# Dependency folders
+node_modules/
+**/node_modules/

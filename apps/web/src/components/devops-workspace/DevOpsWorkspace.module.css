@@ -1,0 +1,673 @@
+/* =========================================================
+   DEVOPS / LINUX WORKSPACE
+
+   LEFT  = NEOMORPHIC PROBLEM PANEL
+   RIGHT = DARK LINUX TERMINAL
+========================================================= */
+
+.workspace {
+  width: 100vw;
+  height: 100vh;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #1e293b;
+  background: #e7ecf2;
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.workspaceHeader {
+  min-height: 64px;
+  padding: 10px 14px;
+  display: grid;
+  grid-template-columns:
+    165px
+    minmax(0, 1fr)
+    auto;
+  align-items: center;
+  gap: 18px;
+  position: relative;
+  z-index: 20;
+  background: #e7ecf2;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow:
+    0 4px 14px rgba(148, 163, 184, 0.15);
+}
+
+/* =========================================================
+   BACK BUTTON
+========================================================= */
+
+.backButton {
+  width: max-content;
+  min-width: 108px;
+  height: 40px;
+  padding: 0 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  outline: none;
+  border-radius: 12px;
+  color: #475569;
+  background: #e7ecf2;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow:
+    5px 5px 10px rgba(185, 194, 204, 0.62),
+    -5px -5px 10px rgba(255, 255, 255, 0.95);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    color 150ms ease;
+}
+
+.backButton:hover {
+  color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.backButton:active {
+  transform: translateY(1px);
+  box-shadow:
+    inset 3px 3px 7px rgba(185, 194, 204, 0.58),
+    inset -3px -3px 7px rgba(255, 255, 255, 0.95);
+}
+
+.backButton svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* =========================================================
+   PROBLEM TITLE
+========================================================= */
+
+.problemTitle {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.titleIcon {
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+  flex-shrink: 0;
+  color: #2563eb;
+  border-radius: 11px;
+  background: #e7ecf2;
+  box-shadow:
+    inset 3px 3px 7px rgba(185, 194, 204, 0.52),
+    inset -3px -3px 7px rgba(255, 255, 255, 0.94);
+}
+
+.problemTitleText {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.problemTitleText strong {
+  overflow: hidden;
+  color: #1e293b;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.problemTitleText span {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+/* =========================================================
+   HEADER ACTIONS
+========================================================= */
+
+.workspaceActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.resetButton,
+.checkButton {
+  height: 40px;
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  outline: none;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 750;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    background 150ms ease,
+    opacity 150ms ease;
+}
+
+.resetButton {
+  color: #334155;
+  background: #e7ecf2;
+  box-shadow:
+    5px 5px 10px rgba(185, 194, 204, 0.58),
+    -5px -5px 10px rgba(255, 255, 255, 0.94);
+}
+
+.resetButton:hover:not(:disabled) {
+  color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.resetButton:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow:
+    inset 3px 3px 7px rgba(185, 194, 204, 0.55),
+    inset -3px -3px 7px rgba(255, 255, 255, 0.94);
+}
+
+.checkButton {
+  color: #ffffff;
+  background: #2563eb;
+  box-shadow:
+    4px 4px 9px rgba(37, 99, 235, 0.27),
+    -3px -3px 7px rgba(255, 255, 255, 0.85);
+}
+
+.checkButton:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.resetButton:disabled,
+.checkButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* =========================================================
+   MAIN BODY
+========================================================= */
+
+.workspaceBody {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 38% 62%;
+  overflow: hidden;
+  background: #e7ecf2;
+}
+
+/* =========================================================
+   LEFT PROBLEM PANEL
+========================================================= */
+
+.problemPanel {
+  min-width: 0;
+  min-height: 0;
+  padding: 13px 12px 13px 14px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #e7ecf2;
+  border-right: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.problemPanelHeader {
+  min-height: 40px;
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  border-radius: 12px;
+  color: #334155;
+  background: #e7ecf2;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  box-shadow:
+    4px 4px 9px rgba(185, 194, 204, 0.58),
+    -4px -4px 9px rgba(255, 255, 255, 0.94);
+}
+
+.problemPanelContent {
+  min-width: 0;
+  min-height: 0;
+  margin-top: 13px;
+  padding: 20px 18px 28px;
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-radius: 16px;
+  background: #e7ecf2;
+  box-shadow:
+    inset 4px 4px 9px rgba(185, 194, 204, 0.48),
+    inset -4px -4px 9px rgba(255, 255, 255, 0.91);
+  scrollbar-width: thin;
+  scrollbar-color: #b2bdc9 transparent;
+}
+
+.problemPanelContent::-webkit-scrollbar {
+  width: 7px;
+}
+
+.problemPanelContent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.problemPanelContent::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #b2bdc9;
+}
+
+.difficulty {
+  width: max-content;
+  padding: 6px 10px;
+  border-radius: 9px;
+  color: #15803d;
+  background: #e7ecf2;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  box-shadow:
+    inset 3px 3px 6px rgba(185, 194, 204, 0.5),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.94);
+}
+
+.problemPanelContent h1 {
+  margin: 18px 0 0;
+  color: #172033;
+  font-size: 23px;
+  line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: -0.35px;
+}
+
+.statement {
+  margin: 14px 0 0;
+  color: #475569;
+  font-size: 11px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+
+.problemPanelContent h2 {
+  margin: 25px 0 0;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.contextBox {
+  margin-top: 13px;
+  padding: 14px 15px;
+  border-radius: 13px;
+  background: #e7ecf2;
+  box-shadow:
+    4px 4px 9px rgba(185, 194, 204, 0.56),
+    -4px -4px 9px rgba(255, 255, 255, 0.94);
+}
+
+.contextBox span {
+  display: block;
+  color: #2563eb;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.contextBox p {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 9px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.skillTags {
+  margin-top: 11px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.skillTags span {
+  padding: 7px 10px;
+  border-radius: 9px;
+  color: #2563eb;
+  background: #e7ecf2;
+  font-size: 8px;
+  font-weight: 700;
+  box-shadow:
+    3px 3px 7px rgba(185, 194, 204, 0.55),
+    -3px -3px 7px rgba(255, 255, 255, 0.93);
+}
+
+/* =========================================================
+   RIGHT TERMINAL PANEL
+========================================================= */
+
+.terminalPanel {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #0f172a;
+}
+
+.terminalHeader {
+  height: 42px;
+  min-height: 42px;
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 1px solid #283449;
+  color: #cbd5e1;
+  background: #172235;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.terminalHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #f8fafc;
+  font-weight: 800;
+}
+
+.terminalHeaderRight {
+  margin-left: auto;
+  color: #7185a3;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+/* =========================================================
+   TERMINAL BODY
+========================================================= */
+
+.terminalBody {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  padding: 16px;
+  overflow: auto;
+  color: #e2e8f0;
+  background: #101827;
+  font-family:
+    Consolas,
+    Monaco,
+    'Courier New',
+    monospace;
+  font-size: 11px;
+  line-height: 1.65;
+  scrollbar-width: thin;
+  scrollbar-color: #334155 #101827;
+}
+
+.terminalBody::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.terminalBody::-webkit-scrollbar-track {
+  background: #101827;
+}
+
+.terminalBody::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #334155;
+}
+
+.welcome {
+  margin-bottom: 14px;
+  color: #64748b;
+}
+
+.prompt {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.promptUser {
+  color: #22c55e;
+}
+
+.promptPath {
+  color: #38bdf8;
+}
+
+.promptSymbol {
+  margin-left: 3px;
+  color: #e2e8f0;
+}
+
+.cursor {
+  width: 7px;
+  height: 15px;
+  margin-left: 5px;
+  display: inline-block;
+  background: #e2e8f0;
+  animation: terminalBlink 1s step-end infinite;
+}
+
+@keyframes terminalBlink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* =========================================================
+   TERMINAL FOOTER
+========================================================= */
+
+.terminalFooter {
+  min-height: 46px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  border-top: 1px solid #283449;
+  background: #172235;
+}
+
+.terminalFooter span {
+  color: #64748b;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.terminalFooter strong {
+  color: #94a3b8;
+  font-size: 9px;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1100px) {
+  .workspaceBody {
+    grid-template-columns: 40% 60%;
+  }
+
+  .workspaceHeader {
+    grid-template-columns:
+      145px
+      minmax(0, 1fr)
+      auto;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 850px) {
+  .workspaceHeader {
+    min-height: auto;
+    grid-template-columns:
+      auto
+      minmax(0, 1fr);
+    padding: 9px 11px;
+  }
+
+  .workspaceActions {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .workspaceBody {
+    grid-template-columns: 42% 58%;
+  }
+}
+
+@media (max-width: 700px) {
+  .workspace {
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
+  }
+
+  .workspaceHeader {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+
+  .workspaceBody {
+    display: block;
+    overflow: visible;
+  }
+
+  .problemPanel {
+    min-height: 500px;
+    border-right: 0;
+    border-bottom:
+      1px solid rgba(148, 163, 184, 0.2);
+  }
+
+  .problemPanelContent {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .terminalPanel {
+    height: 650px;
+  }
+}
+
+@media (max-width: 480px) {
+  .workspaceHeader {
+    gap: 8px;
+  }
+
+  .backButton {
+    min-width: auto;
+    height: 36px;
+    padding: 0 10px;
+    font-size: 9px;
+  }
+
+  .problemTitleText strong {
+    max-width: 145px;
+    font-size: 10px;
+  }
+
+  .workspaceActions {
+    justify-content: stretch;
+  }
+
+  .resetButton,
+  .checkButton {
+    flex: 1;
+    height: 38px;
+  }
+
+  .problemPanel {
+    padding: 9px 8px;
+  }
+
+  .problemPanelContent {
+    padding: 16px 14px 22px;
+  }
+
+  .problemPanelContent h1 {
+    font-size: 20px;
+  }
+
+  .terminalPanel {
+    height: 620px;
+  }
+}
+
+/* =========================================================
+   XTERM
+========================================================= */
+
+.terminalBody {
+  position: relative;
+}
+
+.terminalBody :global(.xterm) {
+  width: 100%;
+  height: 100%;
+}
+
+.terminalBody :global(.xterm-viewport) {
+  overflow-y: auto !important;
+}
+
+.terminalBody :global(.xterm-screen) {
+  width: 100% !important;
+}
+
+.terminalBody :global(.xterm-helper-textarea) {
+  position: absolute !important;
+  opacity: 0 !important;
+}

@@ -49,6 +49,191 @@ type LevelFilter =
   | PracticeLevel;
 
 /* =========================================================
+   NORMALIZE ROUTE TECHNOLOGY SLUG
+========================================================= */
+
+function normalizeTechnologySlug(
+  technologySlug: string,
+) {
+  const slug =
+    technologySlug
+      .trim()
+      .toLowerCase();
+
+  const aliases:
+    Record<string, string> = {
+      /* Programming languages */
+
+      c:
+        'c',
+
+      cpp:
+        'cpp',
+
+      'c++':
+        'cpp',
+
+      javascript:
+        'javascript',
+
+      js:
+        'javascript',
+
+      typescript:
+        'typescript',
+
+      ts:
+        'typescript',
+
+      python:
+        'python',
+
+      py:
+        'python',
+
+      java:
+        'java',
+
+      csharp:
+        'csharp',
+
+      'c-sharp':
+        'csharp',
+
+      'c#':
+        'csharp',
+
+      cs:
+        'csharp',
+
+      php:
+        'php',
+
+      php8:
+        'php',
+
+      'php-8':
+        'php',
+
+      'php8.3':
+        'php',
+
+      /* Databases */
+
+      postgresql:
+        'postgresql',
+
+      postgres:
+        'postgresql',
+
+      pg:
+        'postgresql',
+
+      pgsql:
+        'postgresql',
+
+      'postgre-sql':
+        'postgresql',
+
+      'postgresql-db':
+        'postgresql',
+
+      /* Frontend */
+
+      react:
+        'react',
+
+      reactjs:
+        'react',
+
+      'react-js':
+        'react',
+
+      angular:
+        'angular',
+
+      angularjs:
+        'angular',
+
+      'html-css':
+        'html-css',
+
+      htmlcss:
+        'html-css',
+
+      /* Backend */
+
+      node:
+        'nodejs',
+
+      nodejs:
+        'nodejs',
+
+      'node-js':
+        'nodejs',
+
+      express:
+        'expressjs',
+
+      expressjs:
+        'expressjs',
+
+      'express-js':
+        'expressjs',
+
+      nextjs:
+        'nextjs',
+
+      'next-js':
+        'nextjs',
+
+      nestjs:
+        'nestjs',
+
+      'nest-js':
+        'nestjs',
+
+      springboot:
+        'springboot',
+
+      'spring-boot':
+        'springboot',
+
+      aspnetcore:
+        'aspnetcore',
+
+      'aspnet-core':
+        'aspnetcore',
+
+      'asp.net-core':
+        'aspnetcore',
+
+      'asp.netcore':
+        'aspnetcore',
+
+      'asp.net core':
+        'aspnetcore',
+
+      'dotnet:aspnet-core':
+        'aspnetcore',
+
+      'dotnet:aspnetcore':
+        'aspnetcore',
+
+      'dotnet/aspnet-core':
+        'aspnetcore',
+
+      'dotnet/aspnetcore':
+        'aspnetcore',
+    };
+
+  return (
+    aliases[slug] ??
+    slug
+  );
+}
+
+/* =========================================================
    PAGE
 ========================================================= */
 
@@ -58,19 +243,41 @@ export default function TechnologyPracticePage() {
 
   const params =
     useParams<{
-      technologySlug: string;
+      technologySlug:
+        string;
     }>();
 
-  const technologySlug =
+  /* =======================================================
+     ROUTE TECHNOLOGY
+  ======================================================= */
+
+  const rawTechnologySlug =
     params.technologySlug;
+
+  const technologySlug =
+    useMemo(
+      () =>
+        normalizeTechnologySlug(
+          rawTechnologySlug,
+        ),
+      [
+        rawTechnologySlug,
+      ],
+    );
 
   /* =======================================================
      PRACTICE PATH
   ======================================================= */
 
   const practicePath =
-    getPracticePathByTechnology(
-      technologySlug,
+    useMemo(
+      () =>
+        getPracticePathByTechnology(
+          technologySlug,
+        ),
+      [
+        technologySlug,
+      ],
     );
 
   /* =======================================================
@@ -80,9 +287,10 @@ export default function TechnologyPracticePage() {
   const [
     selectedLevel,
     setSelectedLevel,
-  ] = useState<LevelFilter>(
-    'All',
-  );
+  ] =
+    useState<LevelFilter>(
+      'All',
+    );
 
   /* =======================================================
      SOLVED PROBLEM STATE
@@ -91,155 +299,305 @@ export default function TechnologyPracticePage() {
   const [
     solvedProblemSlugs,
     setSolvedProblemSlugs,
-  ] = useState<string[]>(
-    [],
-  );
+  ] =
+    useState<string[]>(
+      [],
+    );
 
   /* =======================================================
      AUTH
   ======================================================= */
 
-  useEffect(() => {
-    const authenticated =
-      localStorage.getItem(
-        'elab_dummy_auth',
-      ) === 'true';
+  useEffect(
+    () => {
+      const authenticated =
+        localStorage.getItem(
+          'elab_dummy_auth',
+        ) === 'true';
 
-    if (!authenticated) {
-      router.replace(
-        '/login',
-      );
-    }
-  }, [
-    router,
-  ]);
+      if (
+        !authenticated
+      ) {
+        router.replace(
+          '/login',
+        );
+      }
+    },
+    [
+      router,
+    ],
+  );
 
   /* =======================================================
-     ALL PROBLEM SLUGS IN CURRENT PRACTICE PATH
+     RESET FILTER WHEN TECHNOLOGY CHANGES
+  ======================================================= */
+
+  useEffect(
+    () => {
+      setSelectedLevel(
+        'All',
+      );
+    },
+    [
+      technologySlug,
+    ],
+  );
+
+  /* =======================================================
+     ALL PROBLEM SLUGS
+
+     Example PostgreSQL:
+
+     postgresql-create-database
+     postgresql-create-table
+     postgresql-insert-records
+     ...
   ======================================================= */
 
   const pathProblemSlugs =
-    useMemo(() => {
-      if (!practicePath) {
-        return [];
+    useMemo(
+      () => {
+        if (
+          !practicePath
+        ) {
+          return [];
+        }
+
+        return [
+          ...practicePath.stages,
+        ]
+          .sort(
+            (
+              a,
+              b,
+            ) =>
+              a.order -
+              b.order,
+          )
+          .flatMap(
+            (
+              stage,
+            ) =>
+              stage.problemSlugs,
+          );
+      },
+      [
+        practicePath,
+      ],
+    );
+
+  /* =======================================================
+     RESOLVE ALL REGISTERED PROBLEMS
+
+     This checks the practice path against the central
+     problem registry.
+  ======================================================= */
+
+  const registeredProblems =
+    useMemo(
+      () =>
+        getProblemsBySlugs(
+          pathProblemSlugs,
+        ),
+      [
+        pathProblemSlugs,
+      ],
+    );
+
+  /* =======================================================
+     REGISTERED PROBLEM LOOKUP
+
+     This allows each stage to obtain its problems without
+     repeatedly scanning the entire registry.
+  ======================================================= */
+
+  const registeredProblemMap =
+    useMemo(
+      () =>
+        new Map(
+          registeredProblems.map(
+            (
+              problem,
+            ) => [
+              problem.slug,
+              problem,
+            ],
+          ),
+        ),
+      [
+        registeredProblems,
+      ],
+    );
+
+  /* =======================================================
+     DEBUG MISSING PROBLEM DEFINITIONS
+
+     If a slug exists in practice-paths.ts but is not
+     registered in problem-engine/problems.ts, this warning
+     tells us exactly which problem is missing.
+  ======================================================= */
+
+  useEffect(
+    () => {
+      if (
+        !practicePath
+      ) {
+        return;
       }
 
-      return practicePath
-        .stages
-        .flatMap(
-          (stage) =>
-            stage.problemSlugs,
+      const missingSlugs =
+        pathProblemSlugs.filter(
+          (
+            slug,
+          ) =>
+            !registeredProblemMap.has(
+              slug,
+            ),
         );
-    }, [
+
+      if (
+        missingSlugs.length >
+        0
+      ) {
+        console.warn(
+          `[Practice] ${technologySlug} has problem slugs that are not registered:`,
+          missingSlugs,
+        );
+      }
+    },
+    [
       practicePath,
-    ]);
+      pathProblemSlugs,
+      registeredProblemMap,
+      technologySlug,
+    ],
+  );
 
   /* =======================================================
      REFRESH PROGRESS
   ======================================================= */
 
   const refreshProgress =
-    useCallback(() => {
-      const solved =
-        getSolvedProblemSlugs();
+    useCallback(
+      () => {
+        const solved =
+          getSolvedProblemSlugs();
 
-      setSolvedProblemSlugs(
-        solved,
-      );
-    }, []);
-
-  /*
-   * Read solved state when
-   * this page loads.
-   */
-
-  useEffect(() => {
-    refreshProgress();
-  }, [
-    refreshProgress,
-    technologySlug,
-  ]);
-
-  /*
-   * Useful when learner returns
-   * from another browser tab/window
-   * or after workspace navigation.
-   */
-
-  useEffect(() => {
-    const handleFocus = () => {
-      refreshProgress();
-    };
-
-    const handlePageShow = () => {
-      refreshProgress();
-    };
-
-    window.addEventListener(
-      'focus',
-      handleFocus,
+        setSolvedProblemSlugs(
+          solved,
+        );
+      },
+      [],
     );
 
-    window.addEventListener(
-      'pageshow',
-      handlePageShow,
-    );
+  /* =======================================================
+     INITIAL PROGRESS
+  ======================================================= */
 
-    return () => {
-      window.removeEventListener(
+  useEffect(
+    () => {
+      refreshProgress();
+    },
+    [
+      refreshProgress,
+      technologySlug,
+    ],
+  );
+
+  /* =======================================================
+     REFRESH PROGRESS WHEN USER RETURNS
+  ======================================================= */
+
+  useEffect(
+    () => {
+      const handleFocus =
+        () => {
+          refreshProgress();
+        };
+
+      const handlePageShow =
+        () => {
+          refreshProgress();
+        };
+
+      window.addEventListener(
         'focus',
         handleFocus,
       );
 
-      window.removeEventListener(
+      window.addEventListener(
         'pageshow',
         handlePageShow,
       );
-    };
-  }, [
-    refreshProgress,
-  ]);
+
+      return () => {
+        window.removeEventListener(
+          'focus',
+          handleFocus,
+        );
+
+        window.removeEventListener(
+          'pageshow',
+          handlePageShow,
+        );
+      };
+    },
+    [
+      refreshProgress,
+    ],
+  );
 
   /* =======================================================
-     STAGES
+     VISIBLE STAGES
   ======================================================= */
 
   const visibleStages =
-    useMemo(() => {
-      if (!practicePath) {
-        return [];
-      }
+    useMemo(
+      () => {
+        if (
+          !practicePath
+        ) {
+          return [];
+        }
 
-      const ordered = [
-        ...practicePath.stages,
-      ].sort(
-        (
-          a,
-          b,
-        ) =>
-          a.order -
-          b.order,
-      );
+        const ordered =
+          [
+            ...practicePath.stages,
+          ].sort(
+            (
+              a,
+              b,
+            ) =>
+              a.order -
+              b.order,
+          );
 
-      if (
-        selectedLevel ===
-        'All'
-      ) {
-        return ordered;
-      }
+        if (
+          selectedLevel ===
+          'All'
+        ) {
+          return ordered;
+        }
 
-      return ordered.filter(
-        (stage) =>
-          stage.level ===
-          selectedLevel,
-      );
-    }, [
-      practicePath,
-      selectedLevel,
-    ]);
+        return ordered.filter(
+          (
+            stage,
+          ) =>
+            stage.level ===
+            selectedLevel,
+        );
+      },
+      [
+        practicePath,
+        selectedLevel,
+      ],
+    );
 
   /* =======================================================
      TOTAL PROBLEMS
+
+     Use practice-path count so the UI reflects the complete
+     curriculum even if a registry definition is missing.
   ======================================================= */
 
   const totalProblems =
@@ -250,24 +608,29 @@ export default function TechnologyPracticePage() {
   ======================================================= */
 
   const solvedProblems =
-    useMemo(() => {
-      return pathProblemSlugs.filter(
-        (problemSlug) =>
-          solvedProblemSlugs.includes(
+    useMemo(
+      () =>
+        pathProblemSlugs.filter(
+          (
             problemSlug,
-          ),
-      ).length;
-    }, [
-      pathProblemSlugs,
-      solvedProblemSlugs,
-    ]);
+          ) =>
+            solvedProblemSlugs.includes(
+              problemSlug,
+            ),
+        ).length,
+      [
+        pathProblemSlugs,
+        solvedProblemSlugs,
+      ],
+    );
 
   /* =======================================================
      PROGRESS %
   ======================================================= */
 
   const progress =
-    totalProblems > 0
+    totalProblems >
+    0
       ? Math.round(
           (
             solvedProblems /
@@ -281,25 +644,28 @@ export default function TechnologyPracticePage() {
      LOGOUT
   ======================================================= */
 
-  const logout = () => {
-    localStorage.removeItem(
-      'elab_dummy_auth',
-    );
+  const logout =
+    () => {
+      localStorage.removeItem(
+        'elab_dummy_auth',
+      );
 
-    localStorage.removeItem(
-      'elab_dummy_user',
-    );
+      localStorage.removeItem(
+        'elab_dummy_user',
+      );
 
-    router.replace(
-      '/login',
-    );
-  };
+      router.replace(
+        '/login',
+      );
+    };
 
   /* =======================================================
      NOT FOUND
   ======================================================= */
 
-  if (!practicePath) {
+  if (
+    !practicePath
+  ) {
     return (
       <main
         className={
@@ -322,7 +688,10 @@ export default function TechnologyPracticePage() {
             A practice path has
             not yet been created
             for{' '}
-            {technologySlug}.
+            {
+              technologySlug
+            }
+            .
           </p>
 
           <button
@@ -671,16 +1040,57 @@ export default function TechnologyPracticePage() {
             (
               stage,
             ) => {
+              /* ===========================================
+                 RESOLVE STAGE PROBLEMS
+
+                 IMPORTANT:
+
+                 practice-paths.ts contains problem slugs.
+
+                 problem-engine/problems.ts contains the
+                 actual PracticeProblem objects.
+
+                 We resolve them here.
+              =========================================== */
+
               const problems =
-                getProblemsBySlugs(
-                  stage.problemSlugs,
+                stage.problemSlugs
+                  .map(
+                    (
+                      problemSlug,
+                    ) =>
+                      registeredProblemMap.get(
+                        problemSlug,
+                      ),
+                  )
+                  .filter(
+                    (
+                      problem,
+                    ): problem is NonNullable<
+                      typeof problem
+                    > =>
+                      Boolean(
+                        problem,
+                      ),
+                  );
+
+              /* ===========================================
+                 MISSING DEFINITIONS FOR THIS STAGE
+              =========================================== */
+
+              const missingProblemSlugs =
+                stage.problemSlugs.filter(
+                  (
+                    problemSlug,
+                  ) =>
+                    !registeredProblemMap.has(
+                      problemSlug,
+                    ),
                 );
 
-              /*
-               * Count solved problems
-               * inside this individual
-               * stage.
-               */
+              /* ===========================================
+                 SOLVED COUNT
+              =========================================== */
 
               const stageSolvedCount =
                 stage.problemSlugs.filter(
@@ -694,13 +1104,6 @@ export default function TechnologyPracticePage() {
 
               return (
                 <section
-                  /*
-                   * solvedProblemSlugs.length
-                   * is intentionally included
-                   * so returned progress causes
-                   * the list to refresh.
-                   */
-
                   key={`${stage.slug}-${solvedProblemSlugs.length}`}
                   className={
                     styles.stage
@@ -746,7 +1149,8 @@ export default function TechnologyPracticePage() {
 
                         <span>
                           {
-                            problems.length
+                            stage.problemSlugs
+                              .length
                           }{' '}
                           problems
                         </span>
@@ -792,13 +1196,6 @@ export default function TechnologyPracticePage() {
                     }
                   >
                     <ProblemList
-                      /*
-                       * Changing key after a
-                       * solved problem forces
-                       * child ProblemCards to
-                       * reload their status.
-                       */
-
                       key={`${stage.slug}-${solvedProblemSlugs.join('-')}`}
                       problems={
                         problems
@@ -810,7 +1207,12 @@ export default function TechnologyPracticePage() {
                         technologySlug,
                       }}
                       emptyTitle="No problems available"
-                      emptyDescription="Problems for this stage have not yet been added."
+                      emptyDescription={
+                        missingProblemSlugs.length >
+                        0
+                          ? `Problem definitions are missing from the central registry: ${missingProblemSlugs.join(', ')}`
+                          : 'Problems for this stage have not yet been added.'
+                      }
                     />
                   </div>
                 </section>

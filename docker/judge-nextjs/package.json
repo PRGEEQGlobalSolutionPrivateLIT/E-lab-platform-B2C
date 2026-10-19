@@ -1,0 +1,15 @@
+{
+  "name": "elab-judge-nextjs-runtime",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sandbox runtime image for Next.js framework problems in eLab",
+  "dependencies": {
+    "@types/node": "20.19.43",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "next": "16.3.5",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "typescript": "5.9.3"
+  }
+}

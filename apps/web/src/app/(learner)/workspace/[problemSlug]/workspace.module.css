@@ -1465,3 +1465,445 @@
       170px;
   }
 }
+
+
+
+
+.reactPreviewLinkPanel {
+  padding: 14px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #111827;
+}
+
+.reactPreviewLinkHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  color: #f9fafb;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.reactPreviewLinkBody {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reactPreviewLink {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #0b1220;
+  color: #60a5fa;
+  font-family: Consolas, monospace;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.reactPreviewLink:hover {
+  text-decoration: underline;
+}
+
+.openPreviewButton {
+  flex-shrink: 0;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.openPreviewButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+/* =========================================================
+   WEB WORKSPACE — VS CODE STYLE OVERRIDES
+
+   Applies only when the editor contains the HTML/CSS
+   workspace file tab list.
+
+   Normal code and framework workspaces keep the existing
+   four-row layout:
+   Header / Monaco / Input-or-Test / Output
+
+   Web workspace uses:
+   Header / Monaco+Tabs / Output
+========================================================= */
+
+.editorPanel:has(
+  [role='tablist'][aria-label='Workspace files']
+) {
+  grid-template-rows:
+    42px
+    minmax(0, 1fr)
+    180px;
+
+  background: #1e1e1e;
+}
+
+/* =========================================================
+   WEB WORKSPACE HEADER
+========================================================= */
+
+.editorPanel:has(
+  [role='tablist'][aria-label='Workspace files']
+)
+.editorHeader {
+  height: 42px;
+
+  padding:
+    0
+    12px;
+
+  border-bottom:
+    1px solid
+    #2b2b2b;
+
+  color: #cccccc;
+
+  background: #181818;
+
+  font-family:
+    'Segoe UI',
+    Inter,
+    Arial,
+    sans-serif;
+
+  font-size: 11px;
+
+  font-weight: 600;
+}
+
+.editorPanel:has(
+  [role='tablist'][aria-label='Workspace files']
+)
+.editorHeader
+> span:first-child {
+  color: #f3f3f3;
+
+  font-size: 11px;
+
+  font-weight: 650;
+
+  letter-spacing: 0;
+}
+
+/* =========================================================
+   NEW FILE BUTTON
+========================================================= */
+
+.editorPanel
+button[title='Create HTML or CSS file'] {
+  min-width: max-content;
+
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.editorPanel
+button[title='Create HTML or CSS file']:hover:not(:disabled) {
+  border-color: #5a5a5a !important;
+
+  color: #ffffff !important;
+
+  background: #2d2d2d !important;
+}
+
+.editorPanel
+button[title='Create HTML or CSS file']:focus-visible {
+  outline:
+    1px solid
+    #007acc;
+
+  outline-offset: 1px;
+}
+
+/* =========================================================
+   WEB FILE CREATION BAR
+========================================================= */
+
+.editorPanel
+input[aria-label='New web file name'] {
+  caret-color: #ffffff;
+}
+
+.editorPanel
+input[aria-label='New web file name']::placeholder {
+  color: #737373;
+}
+
+.editorPanel
+input[aria-label='New web file name']:focus {
+  border-color: #007acc !important;
+
+  box-shadow:
+    0 0 0 1px
+    #007acc;
+}
+
+/* =========================================================
+   VS CODE FILE TABS
+========================================================= */
+
+.editorPanel
+[role='tablist'][aria-label='Workspace files'] {
+  scrollbar-width: thin;
+
+  scrollbar-color:
+    #424242
+    #181818;
+}
+
+.editorPanel
+[role='tablist'][aria-label='Workspace files']
+::-webkit-scrollbar {
+  height: 6px;
+}
+
+.editorPanel
+[role='tablist'][aria-label='Workspace files']
+::-webkit-scrollbar-track {
+  background: #181818;
+}
+
+.editorPanel
+[role='tablist'][aria-label='Workspace files']
+::-webkit-scrollbar-thumb {
+  background: #424242;
+}
+
+.editorPanel
+[role='tablist'][aria-label='Workspace files']
+button {
+  transition:
+    color 100ms ease,
+    background 100ms ease;
+}
+
+.editorPanel
+[role='tablist'][aria-label='Workspace files']
+button:hover {
+  color: #ffffff !important;
+
+  background: #242424 !important;
+}
+
+.editorPanel
+[role='tablist'][aria-label='Workspace files']
+button[aria-selected='true'] {
+  color: #ffffff !important;
+
+  background: #1e1e1e !important;
+}
+
+/* =========================================================
+   WEB MONACO AREA
+
+   Monaco must consume the complete editor work area.
+========================================================= */
+
+.editorPanel:has(
+  [role='tablist'][aria-label='Workspace files']
+)
+> div:nth-of-type(2) {
+  min-width: 0;
+
+  min-height: 0;
+
+  overflow: hidden;
+
+  background: #1e1e1e;
+}
+
+/* =========================================================
+   WEB OUTPUT CONSOLE
+========================================================= */
+
+.editorPanel:has(
+  [role='tablist'][aria-label='Workspace files']
+)
+.consolePanel {
+  border-top:
+    1px solid
+    #2b2b2b;
+
+  background: #181818;
+}
+
+.editorPanel:has(
+  [role='tablist'][aria-label='Workspace files']
+)
+.consoleHeader {
+  height: 35px;
+
+  min-height: 35px;
+
+  border-bottom:
+    1px solid
+    #2b2b2b;
+
+  background: #181818;
+}
+
+.editorPanel:has(
+  [role='tablist'][aria-label='Workspace files']
+)
+.consoleBody {
+  color: #cccccc;
+
+  background: #1e1e1e;
+
+  font-size: 11px;
+
+  line-height: 1.6;
+}
+
+/* =========================================================
+   WEB PREVIEW LINK
+========================================================= */
+
+.editorPanel:has(
+  [role='tablist'][aria-label='Workspace files']
+)
+.editorHeader
+a {
+  border-radius: 3px;
+
+  padding:
+    5px
+    7px;
+
+  transition:
+    color 120ms ease,
+    background 120ms ease;
+}
+
+.editorPanel:has(
+  [role='tablist'][aria-label='Workspace files']
+)
+.editorHeader
+a:hover {
+  color: #ffffff !important;
+
+  background: #2d2d2d;
+}
+
+/* =========================================================
+   WEB WORKSPACE — TABLET
+========================================================= */
+
+@media (max-width: 1100px) {
+  .editorPanel:has(
+    [role='tablist'][aria-label='Workspace files']
+  ) {
+    grid-template-rows:
+      42px
+      minmax(0, 1fr)
+      165px;
+  }
+}
+
+/* =========================================================
+   WEB WORKSPACE — MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+  .editorPanel:has(
+    [role='tablist'][aria-label='Workspace files']
+  ) {
+    height: 720px;
+
+    grid-template-rows:
+      42px
+      minmax(0, 1fr)
+      165px;
+  }
+
+  .editorPanel:has(
+    [role='tablist'][aria-label='Workspace files']
+  )
+  .editorHeader {
+    gap: 8px;
+
+    padding:
+      0
+      9px;
+  }
+
+  .editorPanel:has(
+    [role='tablist'][aria-label='Workspace files']
+  )
+  .editorHeader
+  > div {
+    gap: 6px !important;
+  }
+
+  .editorPanel
+  button[title='Create HTML or CSS file'] {
+    padding:
+      0
+      7px !important;
+  }
+
+  .editorPanel
+  [role='tablist'][aria-label='Workspace files']
+  button {
+    min-width: 100px !important;
+
+    padding:
+      0
+      10px !important;
+  }
+}
+
+/* =========================================================
+   WEB WORKSPACE — SMALL MOBILE
+========================================================= */
+
+@media (max-width: 480px) {
+  .editorPanel:has(
+    [role='tablist'][aria-label='Workspace files']
+  ) {
+    height: 680px;
+
+    grid-template-rows:
+      42px
+      minmax(0, 1fr)
+      155px;
+  }
+
+  .editorPanel:has(
+    [role='tablist'][aria-label='Workspace files']
+  )
+  .editorHeader
+  > span:first-child {
+    display: none;
+  }
+
+  .editorPanel:has(
+    [role='tablist'][aria-label='Workspace files']
+  )
+  .editorHeader
+  > div {
+    width: 100%;
+
+    justify-content: flex-end;
+  }
+
+  .editorPanel
+  [role='tablist'][aria-label='Workspace files']
+  button {
+    min-width: 92px !important;
+
+    font-size: 11px !important;
+  }
+}

@@ -98,6 +98,18 @@ export const stackDomains: StackDomain[] = [
     pathDescription:
       'SQL → Data Modeling → RDBMS → NoSQL → Optimization',
   },
+
+  {
+    slug: 'blockchain-web3',
+
+    name: 'Blockchain & Web3',
+
+    description:
+      'Develop decentralized applications, Ethereum smart contracts, secure blockchain protocols and DeFi solutions in isolated learning environments.',
+
+    pathDescription:
+      'Ethereum & Solidity → Web3 & DApps → Smart Contract Security → DeFi & Tokenization',
+  },
 ];
 
 export function getDomainBySlug(
