@@ -43,10 +43,10 @@ export type WorkspaceType =
 export type ProblemSource =
 
   | 'practice'
-
   | 'stack'
+  | 'challenge'
+  | 'assignments';
 
-  | 'challenge';
 
 /* =========================================================
 
@@ -65,34 +65,20 @@ export type ProblemSource =
 export type ProblemLanguage =
 
   | 'c'
-
   | 'cpp'
-
   | 'java'
-
   | 'python'
   | 'pyspark'
-
   | 'javascript'
-
   | 'typescript'
-
   | 'solidity'
-
   | 'csharp'
-
   | 'go'
-
   | 'php'
-
   | 'ruby'
-
   | 'swift'
-
   | 'html'
-
   | 'css'
-
   | 'sql';
 
 /* =========================================================

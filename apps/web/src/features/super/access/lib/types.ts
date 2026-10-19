@@ -1,0 +1,88 @@
+export type AdminStatus = 'active' | 'invited' | 'revoked';
+
+export type PermissionKey =
+  | 'users.view'
+  | 'users.manage'
+  | 'users.suspend'
+  | 'admins.manage'
+  | 'institutions.manage'
+  | 'content.view'
+  | 'content.edit'
+  | 'content.publish'
+  | 'content.review.approve'
+  | 'billing.view'
+  | 'billing.refund'
+  | 'billing.plans'
+  | 'coupons.manage'
+  | 'analytics.view'
+  | 'reports.export'
+  | 'support.respond'
+  | 'notifications.send'
+  | 'settings.manage'
+  | 'audit.view'
+  | 'content.upload'
+  | 'problems.manage'
+  | 'tests.manage'
+  | 'tests.hidden'
+  | 'content.validate'
+  | 'runtimes.manage'
+  | 'judge.manage'
+  | 'monitoring.view'
+  | 'support.technical'
+  | 'incidents.manage'
+  | 'releases.manage';
+
+export type InstitutionPermissionKey = 'inst.content.view' | 'inst.content.create' | 'inst.content.publish' | 'inst.tests.manage' | 'inst.batches.manage' | 'inst.learners.manage';
+
+export type AnyPermissionKey = PermissionKey | InstitutionPermissionKey | 'inst.staff.manage';
+
+export interface AdminRole {
+  id: string;
+  name: string;
+  description: string;
+  system: boolean;
+  locked: boolean;
+  permissions: PermissionKey[];
+  updatedAt: number;
+  updatedBy: string;
+}
+
+export interface AdminActivity {
+  at: number;
+  text: string;
+  actor: string;
+}
+
+export interface AdminAccount {
+  id: string;
+  name: string;
+  email: string;
+  roleId: string;
+  scope: string;
+  status: AdminStatus;
+  mfa: boolean;
+  self: boolean;
+  createdAt: number;
+  lastSignInAt: number | null;
+  invitedBy: string;
+  revokeReason: string | null;
+  activity: AdminActivity[];
+}
+
+export interface AdminDirectory {
+  admins: AdminAccount[];
+  roles: AdminRole[];
+}
+
+export interface InviteAdminInput {
+  name: string;
+  email: string;
+  roleId: string;
+  scope: string;
+}
+
+export interface NewRoleInput {
+  name: string;
+  description: string;
+  copyFrom: string | null;
+}

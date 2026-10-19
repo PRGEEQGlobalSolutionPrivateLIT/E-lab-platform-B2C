@@ -52,6 +52,17 @@ generated/
 # Prisma local databases if ever used
 *.db
 *.db-journal
-# Dependency folders
-node_modules/
+
 **/node_modules/
+
+*.zip
+*.tsbuildinfo
+apps/api/users.csv
+cj.txt
+.env.*
+!.env.example
+AGENTS.md
+CLAUDE.md
+
+apps/api/scripts/smoke-*.ps1
+

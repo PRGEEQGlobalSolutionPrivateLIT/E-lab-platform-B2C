@@ -2,79 +2,48 @@ import {
   BadGatewayException,
   BadRequestException,
   Injectable,
+  ServiceUnavailableException,
 } from '@nestjs/common';
+import type { RunRecord } from '../judge/judge-gateway.service.js';
+import { getCTestCases } from './c-test-cases.js';
 
-import {
-  getCTestCases,
-} from './c-test-cases.js';
+import { getCppTestCases } from './cpp-test-cases.js';
 
-import {
-  getCppTestCases,
-} from './cpp-test-cases.js';
+import { getJavaScriptTestCases } from './javascript-test-cases.js';
 
-import {
-  getJavaScriptTestCases,
-} from './javascript-test-cases.js';
+import { getNodeJsTestCases } from './nodejs-test-cases.js';
 
-import {
-  getNodeJsTestCases,
-} from './nodejs-test-cases.js';
+import { getTypeScriptTestCases } from './typescript-test-cases.js';
 
-import {
-  getTypeScriptTestCases,
-} from './typescript-test-cases.js';
-
-import {
-  getPythonTestCases,
-} from './python-test-cases.js';
+import { getPythonTestCases } from './python-test-cases.js';
 
 /* AWS offline Python submission cases */
-import {
-  getAwsTestCases,
-} from './aws-test-cases.js';
+import { getAwsTestCases } from './aws-test-cases.js';
 
 /* Microsoft Azure offline Python submission cases */
-import {
-  getAzureTestCases,
-} from './azure-test-cases.js';
+import { getAzureTestCases } from './azure-test-cases.js';
 
 /* Google Cloud offline Python submission cases */
-import {
-  getGcpTestCases,
-} from './gcp-test-cases.js';
+import { getGcpTestCases } from './gcp-test-cases.js';
 
-import {
-  getPythonSparkTestCases,
-} from './python-spark-test-cases.js';
+import { getPythonSparkTestCases } from './python-spark-test-cases.js';
 
-import {
-  getPythonMachineLearningTestCases,
-} from './python-machine-learning-test-cases.js';
+import { getPythonMachineLearningTestCases } from './python-machine-learning-test-cases.js';
 
-import {
-  getPythonMachineLearningDataset,
-} from '../ai-ml/python-machine-learning-datasets.js';
+import { getPythonMachineLearningDataset } from '../ai-ml/python-machine-learning-datasets.js';
 
-import {
-  getJavaTestCases,
-} from './java-test-cases.js';
+import { getJavaTestCases } from './java-test-cases.js';
 
 import {
   getCSharpTestCases,
   type CSharpHiddenTestCase,
 } from './csharp-test-cases.js';
 
-import {
-  getPhpTestCases,
-} from './php-test-cases.js';
+import { getPhpTestCases } from './php-test-cases.js';
 
-import {
-  getRubyTestCases,
-} from './ruby-test-cases.js';
+import { getRubyTestCases } from './ruby-test-cases.js';
 
-import {
-  getSwiftTestCases,
-} from './swift-test-cases.js';
+import { getSwiftTestCases } from './swift-test-cases.js';
 
 import {
   getNextJsTestCases,
@@ -101,18 +70,12 @@ import {
   type AspNetCoreHiddenTestCase,
 } from './aspnetcore-test-cases.js';
 
-import {
-  getFastApiTestCases,
-} from './fastapi-test-cases.js';
+import { getFastApiTestCases } from './fastapi-test-cases.js';
 
-import {
-  getAiMlTestCases,
-} from './ai-ml-test-cases.js';
+import { getAiMlTestCases } from './ai-ml-test-cases.js';
 
 /* Generative AI offline Python submission cases */
-import {
-  getGenerativeAiTestCases,
-} from './generative-ai-test-cases.js';
+import { getGenerativeAiTestCases } from './generative-ai-test-cases.js';
 
 /* =========================================================
    TYPES
@@ -283,30 +246,20 @@ const SUPPORTED_LANGUAGES = [
 
 @Injectable()
 export class SubmissionsService {
-  private readonly judgeUrl =
-    process.env.JUDGE_URL ??
-    'http://127.0.0.1:4100';
+  private readonly judgeUrl = process.env.JUDGE_URL ?? 'http://127.0.0.1:4100';
 
   /* =======================================================
      NORMALIZE LANGUAGE
   ======================================================= */
 
-  private normalizeLanguage(
-    language: string,
-  ) {
-    const normalized =
-      language
-        .trim()
-        .toLowerCase();
+  private normalizeLanguage(language: string) {
+    const normalized = language.trim().toLowerCase();
 
     /*
      * C++
      */
 
-    if (
-      normalized === 'c++' ||
-      normalized === 'cplusplus'
-    ) {
+    if (normalized === 'c++' || normalized === 'cplusplus') {
       return 'cpp';
     }
 
@@ -416,10 +369,7 @@ export class SubmissionsService {
      * Java
      */
 
-    if (
-      normalized === 'java' ||
-      normalized === 'jdk'
-    ) {
+    if (normalized === 'java' || normalized === 'jdk') {
       return 'java';
     }
 
@@ -484,15 +434,8 @@ export class SubmissionsService {
      trailing spaces/newlines
   ======================================================= */
 
-  private normalizeOutput(
-    value: string,
-  ) {
-    return value
-      .replace(
-        /\r\n/g,
-        '\n',
-      )
-      .trim();
+  private normalizeOutput(value: string) {
+    return value.replace(/\r\n/g, '\n').trim();
   }
 
   /* =======================================================
@@ -503,15 +446,10 @@ export class SubmissionsService {
      so global/sticky expressions cannot affect later tests.
   ======================================================= */
 
-  private matchesSourcePattern(
-    pattern: RegExp,
-    code: string,
-  ) {
+  private matchesSourcePattern(pattern: RegExp, code: string) {
     pattern.lastIndex = 0;
 
-    return pattern.test(
-      code,
-    );
+    return pattern.test(code);
   }
 
   /* =======================================================
@@ -530,36 +468,18 @@ export class SubmissionsService {
     code: string,
     testCase: HiddenTestCase,
   ): string | null {
-    const requiredChecks =
-      testCase.requiredSourceChecks ??
-      [];
+    const requiredChecks = testCase.requiredSourceChecks ?? [];
 
-    for (
-      const check of requiredChecks
-    ) {
-      if (
-        !this.matchesSourcePattern(
-          check.pattern,
-          code,
-        )
-      ) {
+    for (const check of requiredChecks) {
+      if (!this.matchesSourcePattern(check.pattern, code)) {
         return check.message;
       }
     }
 
-    const forbiddenChecks =
-      testCase.forbiddenSourceChecks ??
-      [];
+    const forbiddenChecks = testCase.forbiddenSourceChecks ?? [];
 
-    for (
-      const check of forbiddenChecks
-    ) {
-      if (
-        this.matchesSourcePattern(
-          check.pattern,
-          code,
-        )
-      ) {
+    for (const check of forbiddenChecks) {
+      if (this.matchesSourcePattern(check.pattern, code)) {
         return check.message;
       }
     }
@@ -571,19 +491,8 @@ export class SubmissionsService {
      NORMALIZE FRAMEWORK FILE PATH
   ======================================================= */
 
-  private normalizeFrameworkFilePath(
-    filePath: string,
-  ) {
-    return filePath
-      .replace(
-        /\\/g,
-        '/',
-      )
-      .replace(
-        /^\/+/,
-        '',
-      )
-      .trim();
+  private normalizeFrameworkFilePath(filePath: string) {
+    return filePath.replace(/\\/g, '/').replace(/^\/+/, '').trim();
   }
 
   /* =======================================================
@@ -605,59 +514,22 @@ export class SubmissionsService {
     body: SubmissionRequest,
     testCases: NextJsHiddenTestCase[],
   ): FrameworkSubmissionFile[] {
-    if (
-      Array.isArray(
-        body.files,
-      ) &&
-      body.files.length > 0
-    ) {
-      return body.files.map(
-        (
-          file,
-        ) => ({
-          path:
-            this.normalizeFrameworkFilePath(
-              file.path,
-            ),
+    if (Array.isArray(body.files) && body.files.length > 0) {
+      return body.files.map((file) => ({
+        path: this.normalizeFrameworkFilePath(file.path),
 
-          language:
-            file.language,
+        language: file.language,
 
-          content:
-            file.content,
-        }),
-      );
+        content: file.content,
+      }));
     }
 
-    const primaryFilePath =
-      testCases
-        .flatMap(
-          (
-            testCase,
-          ) =>
-            testCase.requiredFiles ??
-            [],
-        )
-        .map(
-          (
-            filePath,
-          ) =>
-            this.normalizeFrameworkFilePath(
-              filePath,
-            ),
-        )
-        .find(
-          (
-            filePath,
-          ) =>
-            Boolean(
-              filePath,
-            ),
-        );
+    const primaryFilePath = testCases
+      .flatMap((testCase) => testCase.requiredFiles ?? [])
+      .map((filePath) => this.normalizeFrameworkFilePath(filePath))
+      .find((filePath) => Boolean(filePath));
 
-    if (
-      !primaryFilePath
-    ) {
+    if (!primaryFilePath) {
       throw new BadRequestException(
         `No Next.js learner file is configured for ${body.problemSlug}.`,
       );
@@ -665,14 +537,11 @@ export class SubmissionsService {
 
     return [
       {
-        path:
-          primaryFilePath,
+        path: primaryFilePath,
 
-        language:
-          'typescript',
+        language: 'typescript',
 
-        content:
-          body.code,
+        content: body.code,
       },
     ];
   }
@@ -685,24 +554,13 @@ export class SubmissionsService {
     files: FrameworkSubmissionFile[],
     filePath: string,
   ): string | null {
-    const normalizedPath =
-      this.normalizeFrameworkFilePath(
-        filePath,
-      );
+    const normalizedPath = this.normalizeFrameworkFilePath(filePath);
 
-    const file =
-      files.find(
-        (
-          item,
-        ) =>
-          this.normalizeFrameworkFilePath(
-            item.path,
-          ) ===
-          normalizedPath,
-      );
+    const file = files.find(
+      (item) => this.normalizeFrameworkFilePath(item.path) === normalizedPath,
+    );
 
-    return file?.content ??
-      null;
+    return file?.content ?? null;
   }
 
   /* =======================================================
@@ -722,19 +580,11 @@ export class SubmissionsService {
     flags: string | undefined,
     code: string,
   ) {
-    const expression =
-      new RegExp(
-        pattern,
-        flags ??
-          'm',
-      );
+    const expression = new RegExp(pattern, flags ?? 'm');
 
-    expression.lastIndex =
-      0;
+    expression.lastIndex = 0;
 
-    return expression.test(
-      code,
-    );
+    return expression.test(code);
   }
 
   /* =======================================================
@@ -745,122 +595,66 @@ export class SubmissionsService {
     files: FrameworkSubmissionFile[],
     testCase: NextJsHiddenTestCase,
   ): NextJsValidationResult {
-    const requiredFiles =
-      testCase.requiredFiles ??
-      [];
+    const requiredFiles = testCase.requiredFiles ?? [];
 
-    for (
-      const filePath of requiredFiles
-    ) {
-      const content =
-        this.getNextJsFileContent(
-          files,
-          filePath,
-        );
+    for (const filePath of requiredFiles) {
+      const content = this.getNextJsFileContent(files, filePath);
 
-      if (
-        content ===
-        null
-      ) {
+      if (content === null) {
         return {
-          passed:
-            false,
+          passed: false,
 
-          message:
-            `Required file is missing: ${filePath}`,
+          message: `Required file is missing: ${filePath}`,
         };
       }
     }
 
-    const requiredChecks =
-      testCase.requiredSourceChecks ??
-      [];
+    const requiredChecks = testCase.requiredSourceChecks ?? [];
 
-    for (
-      const check of requiredChecks
-    ) {
-      const content =
-        this.getNextJsFileContent(
-          files,
-          check.filePath,
-        );
+    for (const check of requiredChecks) {
+      const content = this.getNextJsFileContent(files, check.filePath);
 
-      if (
-        content ===
-        null
-      ) {
+      if (content === null) {
         return {
-          passed:
-            false,
+          passed: false,
 
-          message:
-            `Required file is missing: ${check.filePath}`,
+          message: `Required file is missing: ${check.filePath}`,
         };
       }
 
-      if (
-        !this.matchesNextJsPattern(
-          check.pattern,
-          check.flags,
-          content,
-        )
-      ) {
+      if (!this.matchesNextJsPattern(check.pattern, check.flags, content)) {
         return {
-          passed:
-            false,
+          passed: false,
 
-          message:
-            check.message,
+          message: check.message,
         };
       }
     }
 
-    const forbiddenChecks =
-      testCase.forbiddenSourceChecks ??
-      [];
+    const forbiddenChecks = testCase.forbiddenSourceChecks ?? [];
 
-    for (
-      const check of forbiddenChecks
-    ) {
-      const content =
-        this.getNextJsFileContent(
-          files,
-          check.filePath,
-        );
+    for (const check of forbiddenChecks) {
+      const content = this.getNextJsFileContent(files, check.filePath);
 
-      if (
-        content ===
-        null
-      ) {
+      if (content === null) {
         return {
-          passed:
-            false,
+          passed: false,
 
-          message:
-            `Required file is missing: ${check.filePath}`,
+          message: `Required file is missing: ${check.filePath}`,
         };
       }
 
-      if (
-        this.matchesNextJsPattern(
-          check.pattern,
-          check.flags,
-          content,
-        )
-      ) {
+      if (this.matchesNextJsPattern(check.pattern, check.flags, content)) {
         return {
-          passed:
-            false,
+          passed: false,
 
-          message:
-            check.message,
+          message: check.message,
         };
       }
     }
 
     return {
-      passed:
-        true,
+      passed: true,
     };
   }
 
@@ -883,18 +677,12 @@ export class SubmissionsService {
      Hidden test definitions never go to the learner browser.
   ======================================================= */
 
-  private async submitNextJs(
-    body: SubmissionRequest,
-    language: string,
-  ) {
+  private async submitNextJs(body: SubmissionRequest, language: string) {
     /* =====================================================
        NEXT.JS CURRENTLY USES TYPESCRIPT
     ===================================================== */
 
-    if (
-      language !==
-      'typescript'
-    ) {
+    if (language !== 'typescript') {
       throw new BadRequestException(
         'Next.js practice problems currently require TypeScript.',
       );
@@ -904,15 +692,9 @@ export class SubmissionsService {
        HIDDEN TESTS
     ===================================================== */
 
-    const testCases =
-      getNextJsTestCases(
-        body.problemSlug,
-      );
+    const testCases = getNextJsTestCases(body.problemSlug);
 
-    if (
-      testCases.length ===
-      0
-    ) {
+    if (testCases.length === 0) {
       throw new BadRequestException(
         `No hidden test cases configured for ${body.problemSlug}.`,
       );
@@ -922,16 +704,9 @@ export class SubmissionsService {
        FRAMEWORK FILES
     ===================================================== */
 
-    const files =
-      this.getNextJsSubmissionFiles(
-        body,
-        testCases,
-      );
+    const files = this.getNextJsSubmissionFiles(body, testCases);
 
-    if (
-      files.length ===
-      0
-    ) {
+    if (files.length === 0) {
       throw new BadRequestException(
         'At least one Next.js framework file is required.',
       );
@@ -944,37 +719,23 @@ export class SubmissionsService {
     let response: Response;
 
     try {
-      response =
-        await fetch(
-          `${this.judgeUrl}/run/framework`,
-          {
-            method:
-              'POST',
+      response = await fetch(`${this.judgeUrl}/run/framework`, {
+        method: 'POST',
 
-            headers: {
-              'Content-Type':
-                'application/json',
-            },
+        headers: {
+          'Content-Type': 'application/json',
+        },
 
-            body:
-              JSON.stringify({
-                problemSlug:
-                  body.problemSlug,
+        body: JSON.stringify({
+          problemSlug: body.problemSlug,
 
-                runtime:
-                  'nextjs',
+          runtime: 'nextjs',
 
-                files,
-              }),
-          },
-        );
-    } catch (
-      error
-    ) {
-      console.error(
-        'Unable to connect to Next.js judge:',
-        error,
-      );
+          files,
+        }),
+      });
+    } catch (error) {
+      console.error('Unable to connect to Next.js judge:', error);
 
       throw new BadGatewayException(
         'Unable to connect to the Next.js code judge.',
@@ -985,12 +746,10 @@ export class SubmissionsService {
        PARSE JUDGE RESPONSE
     ===================================================== */
 
-    let judgeResult:
-      JudgeResponse;
+    let judgeResult: JudgeResponse;
 
     try {
-      judgeResult =
-        (await response.json()) as JudgeResponse;
+      judgeResult = (await response.json()) as JudgeResponse;
     } catch {
       throw new BadGatewayException(
         'Invalid response received from Next.js code judge.',
@@ -1001,12 +760,9 @@ export class SubmissionsService {
        JUDGE HTTP ERROR
     ===================================================== */
 
-    if (
-      !response.ok
-    ) {
+    if (!response.ok) {
       throw new BadGatewayException(
-        judgeResult.message ??
-          'Next.js judge rejected the submission.',
+        judgeResult.message ?? 'Next.js judge rejected the submission.',
       );
     }
 
@@ -1014,10 +770,7 @@ export class SubmissionsService {
        UNSUPPORTED RUNTIME
     ===================================================== */
 
-    if (
-      judgeResult.status ===
-      'UNSUPPORTED_RUNTIME'
-    ) {
+    if (judgeResult.status === 'UNSUPPORTED_RUNTIME') {
       throw new BadGatewayException(
         judgeResult.message ??
           'Judge does not support the Next.js framework runtime.',
@@ -1028,13 +781,9 @@ export class SubmissionsService {
        INVALID REQUEST
     ===================================================== */
 
-    if (
-      judgeResult.status ===
-      'INVALID_REQUEST'
-    ) {
+    if (judgeResult.status === 'INVALID_REQUEST') {
       throw new BadGatewayException(
-        judgeResult.message ??
-          'Next.js judge rejected the framework files.',
+        judgeResult.message ?? 'Next.js judge rejected the framework files.',
       );
     }
 
@@ -1042,13 +791,9 @@ export class SubmissionsService {
        INTERNAL JUDGE ERROR
     ===================================================== */
 
-    if (
-      judgeResult.status ===
-      'INTERNAL_ERROR'
-    ) {
+    if (judgeResult.status === 'INTERNAL_ERROR') {
       throw new BadGatewayException(
-        judgeResult.message ??
-          'Internal Next.js judge error.',
+        judgeResult.message ?? 'Internal Next.js judge error.',
       );
     }
 
@@ -1056,57 +801,39 @@ export class SubmissionsService {
        COMPILATION / NEXT.JS BUILD ERROR
     ===================================================== */
 
-    if (
-      judgeResult.status ===
-      'COMPILATION_ERROR'
-    ) {
+    if (judgeResult.status === 'COMPILATION_ERROR') {
       return {
-        problemSlug:
-          body.problemSlug,
+        problemSlug: body.problemSlug,
 
         language,
 
-        runtime:
-          'nextjs',
+        runtime: 'nextjs',
 
-        status:
-          'COMPILATION_ERROR',
+        status: 'COMPILATION_ERROR',
 
-        passedTests:
-          0,
+        passedTests: 0,
 
-        totalTests:
-          testCases.length,
+        totalTests: testCases.length,
 
-        score:
-          0,
+        score: 0,
 
         results: [
           {
-            testNumber:
-              1,
+            testNumber: 1,
 
-            passed:
-              false,
+            passed: false,
 
-            status:
-              'COMPILATION_ERROR',
+            status: 'COMPILATION_ERROR',
 
-            output:
-              judgeResult.output ??
-              '',
+            output: judgeResult.output ?? '',
 
-            expectedOutput:
-              '',
+            expectedOutput: '',
 
-            stderr:
-              judgeResult.stderr ??
-              '',
+            stderr: judgeResult.stderr ?? '',
           },
         ],
 
-        context:
-          body.context,
+        context: body.context,
       };
     }
 
@@ -1114,57 +841,39 @@ export class SubmissionsService {
        TIME LIMIT
     ===================================================== */
 
-    if (
-      judgeResult.status ===
-      'TIME_LIMIT_EXCEEDED'
-    ) {
+    if (judgeResult.status === 'TIME_LIMIT_EXCEEDED') {
       return {
-        problemSlug:
-          body.problemSlug,
+        problemSlug: body.problemSlug,
 
         language,
 
-        runtime:
-          'nextjs',
+        runtime: 'nextjs',
 
-        status:
-          'TIME_LIMIT_EXCEEDED',
+        status: 'TIME_LIMIT_EXCEEDED',
 
-        passedTests:
-          0,
+        passedTests: 0,
 
-        totalTests:
-          testCases.length,
+        totalTests: testCases.length,
 
-        score:
-          0,
+        score: 0,
 
         results: [
           {
-            testNumber:
-              1,
+            testNumber: 1,
 
-            passed:
-              false,
+            passed: false,
 
-            status:
-              'TIME_LIMIT_EXCEEDED',
+            status: 'TIME_LIMIT_EXCEEDED',
 
-            output:
-              judgeResult.output ??
-              '',
+            output: judgeResult.output ?? '',
 
-            expectedOutput:
-              '',
+            expectedOutput: '',
 
-            stderr:
-              judgeResult.stderr ??
-              '',
+            stderr: judgeResult.stderr ?? '',
           },
         ],
 
-        context:
-          body.context,
+        context: body.context,
       };
     }
 
@@ -1172,57 +881,39 @@ export class SubmissionsService {
        RUNTIME ERROR
     ===================================================== */
 
-    if (
-      judgeResult.status ===
-      'RUNTIME_ERROR'
-    ) {
+    if (judgeResult.status === 'RUNTIME_ERROR') {
       return {
-        problemSlug:
-          body.problemSlug,
+        problemSlug: body.problemSlug,
 
         language,
 
-        runtime:
-          'nextjs',
+        runtime: 'nextjs',
 
-        status:
-          'RUNTIME_ERROR',
+        status: 'RUNTIME_ERROR',
 
-        passedTests:
-          0,
+        passedTests: 0,
 
-        totalTests:
-          testCases.length,
+        totalTests: testCases.length,
 
-        score:
-          0,
+        score: 0,
 
         results: [
           {
-            testNumber:
-              1,
+            testNumber: 1,
 
-            passed:
-              false,
+            passed: false,
 
-            status:
-              'RUNTIME_ERROR',
+            status: 'RUNTIME_ERROR',
 
-            output:
-              judgeResult.output ??
-              '',
+            output: judgeResult.output ?? '',
 
-            expectedOutput:
-              '',
+            expectedOutput: '',
 
-            stderr:
-              judgeResult.stderr ??
-              '',
+            stderr: judgeResult.stderr ?? '',
           },
         ],
 
-        context:
-          body.context,
+        context: body.context,
       };
     }
 
@@ -1230,10 +921,7 @@ export class SubmissionsService {
        BUILD MUST SUCCEED BEFORE HIDDEN TEST VALIDATION
     ===================================================== */
 
-    if (
-      judgeResult.status !==
-      'SUCCESS'
-    ) {
+    if (judgeResult.status !== 'SUCCESS') {
       throw new BadGatewayException(
         judgeResult.message ??
           `Unexpected Next.js judge status: ${judgeResult.status}`,
@@ -1260,55 +948,33 @@ export class SubmissionsService {
       message?: string;
     }> = [];
 
-    let passedTests =
-      0;
+    let passedTests = 0;
 
-    for (
-      let index = 0;
-      index < testCases.length;
-      index += 1
-    ) {
-      const testCase =
-        testCases[index];
+    for (let index = 0; index < testCases.length; index += 1) {
+      const testCase = testCases[index];
 
-      const validation =
-        this.validateNextJsHiddenTest(
-          files,
-          testCase,
-        );
+      const validation = this.validateNextJsHiddenTest(files, testCase);
 
-      if (
-        validation.passed
-      ) {
-        passedTests +=
-          1;
+      if (validation.passed) {
+        passedTests += 1;
       }
 
       results.push({
-        testNumber:
-          index + 1,
+        testNumber: index + 1,
 
-        passed:
-          validation.passed,
+        passed: validation.passed,
 
-        status:
-          validation.passed
-            ? 'PASSED'
-            : 'FAILED',
+        status: validation.passed ? 'PASSED' : 'FAILED',
 
-        output:
-          '',
+        output: '',
 
-        expectedOutput:
-          '',
+        expectedOutput: '',
 
-        stderr:
-          '',
+        stderr: '',
 
         ...(validation.message
           ? {
-              message:
-                validation.message,
+              message: validation.message,
             }
           : {}),
       });
@@ -1318,37 +984,21 @@ export class SubmissionsService {
        FINAL RESULT
     ===================================================== */
 
-    const totalTests =
-      testCases.length;
+    const totalTests = testCases.length;
 
-    const allTestsPassed =
-      totalTests > 0 &&
-      passedTests ===
-        totalTests;
+    const allTestsPassed = totalTests > 0 && passedTests === totalTests;
 
     const score =
-      totalTests > 0
-        ? Math.round(
-            (
-              passedTests /
-              totalTests
-            ) * 100,
-          )
-        : 0;
+      totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
 
     return {
-      problemSlug:
-        body.problemSlug,
+      problemSlug: body.problemSlug,
 
       language,
 
-      runtime:
-        'nextjs',
+      runtime: 'nextjs',
 
-      status:
-        allTestsPassed
-          ? 'ACCEPTED'
-          : 'WRONG_ANSWER',
+      status: allTestsPassed ? 'ACCEPTED' : 'WRONG_ANSWER',
 
       passedTests,
 
@@ -1358,12 +1008,9 @@ export class SubmissionsService {
 
       results,
 
-      buildOutput:
-        judgeResult.output ??
-        '',
+      buildOutput: judgeResult.output ?? '',
 
-      context:
-        body.context,
+      context: body.context,
     };
   }
 
@@ -1387,59 +1034,22 @@ export class SubmissionsService {
     body: SubmissionRequest,
     testCases: NestJsHiddenTestCase[],
   ): FrameworkSubmissionFile[] {
-    if (
-      Array.isArray(
-        body.files,
-      ) &&
-      body.files.length > 0
-    ) {
-      return body.files.map(
-        (
-          file,
-        ) => ({
-          path:
-            this.normalizeFrameworkFilePath(
-              file.path,
-            ),
+    if (Array.isArray(body.files) && body.files.length > 0) {
+      return body.files.map((file) => ({
+        path: this.normalizeFrameworkFilePath(file.path),
 
-          language:
-            file.language,
+        language: file.language,
 
-          content:
-            file.content,
-        }),
-      );
+        content: file.content,
+      }));
     }
 
-    const primaryFilePath =
-      testCases
-        .flatMap(
-          (
-            testCase,
-          ) =>
-            testCase.requiredFiles ??
-            [],
-        )
-        .map(
-          (
-            filePath,
-          ) =>
-            this.normalizeFrameworkFilePath(
-              filePath,
-            ),
-        )
-        .find(
-          (
-            filePath,
-          ) =>
-            Boolean(
-              filePath,
-            ),
-        );
+    const primaryFilePath = testCases
+      .flatMap((testCase) => testCase.requiredFiles ?? [])
+      .map((filePath) => this.normalizeFrameworkFilePath(filePath))
+      .find((filePath) => Boolean(filePath));
 
-    if (
-      !primaryFilePath
-    ) {
+    if (!primaryFilePath) {
       throw new BadRequestException(
         `No NestJS learner file is configured for ${body.problemSlug}.`,
       );
@@ -1447,14 +1057,11 @@ export class SubmissionsService {
 
     return [
       {
-        path:
-          primaryFilePath,
+        path: primaryFilePath,
 
-        language:
-          'typescript',
+        language: 'typescript',
 
-        content:
-          body.code,
+        content: body.code,
       },
     ];
   }
@@ -1467,24 +1074,13 @@ export class SubmissionsService {
     files: FrameworkSubmissionFile[],
     filePath: string,
   ): string | null {
-    const normalizedPath =
-      this.normalizeFrameworkFilePath(
-        filePath,
-      );
+    const normalizedPath = this.normalizeFrameworkFilePath(filePath);
 
-    const file =
-      files.find(
-        (
-          item,
-        ) =>
-          this.normalizeFrameworkFilePath(
-            item.path,
-          ) ===
-          normalizedPath,
-      );
+    const file = files.find(
+      (item) => this.normalizeFrameworkFilePath(item.path) === normalizedPath,
+    );
 
-    return file?.content ??
-      null;
+    return file?.content ?? null;
   }
 
   /* =======================================================
@@ -1504,19 +1100,11 @@ export class SubmissionsService {
     flags: string | undefined,
     code: string,
   ) {
-    const expression =
-      new RegExp(
-        pattern,
-        flags ??
-          'm',
-      );
+    const expression = new RegExp(pattern, flags ?? 'm');
 
-    expression.lastIndex =
-      0;
+    expression.lastIndex = 0;
 
-    return expression.test(
-      code,
-    );
+    return expression.test(code);
   }
 
   /* =======================================================
@@ -1527,122 +1115,66 @@ export class SubmissionsService {
     files: FrameworkSubmissionFile[],
     testCase: NestJsHiddenTestCase,
   ): NestJsValidationResult {
-    const requiredFiles =
-      testCase.requiredFiles ??
-      [];
+    const requiredFiles = testCase.requiredFiles ?? [];
 
-    for (
-      const filePath of requiredFiles
-    ) {
-      const content =
-        this.getNestJsFileContent(
-          files,
-          filePath,
-        );
+    for (const filePath of requiredFiles) {
+      const content = this.getNestJsFileContent(files, filePath);
 
-      if (
-        content ===
-        null
-      ) {
+      if (content === null) {
         return {
-          passed:
-            false,
+          passed: false,
 
-          message:
-            `Required file is missing: ${filePath}`,
+          message: `Required file is missing: ${filePath}`,
         };
       }
     }
 
-    const requiredChecks =
-      testCase.requiredSourceChecks ??
-      [];
+    const requiredChecks = testCase.requiredSourceChecks ?? [];
 
-    for (
-      const check of requiredChecks
-    ) {
-      const content =
-        this.getNestJsFileContent(
-          files,
-          check.filePath,
-        );
+    for (const check of requiredChecks) {
+      const content = this.getNestJsFileContent(files, check.filePath);
 
-      if (
-        content ===
-        null
-      ) {
+      if (content === null) {
         return {
-          passed:
-            false,
+          passed: false,
 
-          message:
-            `Required file is missing: ${check.filePath}`,
+          message: `Required file is missing: ${check.filePath}`,
         };
       }
 
-      if (
-        !this.matchesNestJsPattern(
-          check.pattern,
-          check.flags,
-          content,
-        )
-      ) {
+      if (!this.matchesNestJsPattern(check.pattern, check.flags, content)) {
         return {
-          passed:
-            false,
+          passed: false,
 
-          message:
-            check.message,
+          message: check.message,
         };
       }
     }
 
-    const forbiddenChecks =
-      testCase.forbiddenSourceChecks ??
-      [];
+    const forbiddenChecks = testCase.forbiddenSourceChecks ?? [];
 
-    for (
-      const check of forbiddenChecks
-    ) {
-      const content =
-        this.getNestJsFileContent(
-          files,
-          check.filePath,
-        );
+    for (const check of forbiddenChecks) {
+      const content = this.getNestJsFileContent(files, check.filePath);
 
-      if (
-        content ===
-        null
-      ) {
+      if (content === null) {
         return {
-          passed:
-            false,
+          passed: false,
 
-          message:
-            `Required file is missing: ${check.filePath}`,
+          message: `Required file is missing: ${check.filePath}`,
         };
       }
 
-      if (
-        this.matchesNestJsPattern(
-          check.pattern,
-          check.flags,
-          content,
-        )
-      ) {
+      if (this.matchesNestJsPattern(check.pattern, check.flags, content)) {
         return {
-          passed:
-            false,
+          passed: false,
 
-          message:
-            check.message,
+          message: check.message,
         };
       }
     }
 
     return {
-      passed:
-        true,
+      passed: true,
     };
   }
 
@@ -1665,18 +1197,12 @@ export class SubmissionsService {
      Hidden test definitions never go to the learner browser.
   ======================================================= */
 
-  private async submitNestJs(
-    body: SubmissionRequest,
-    language: string,
-  ) {
+  private async submitNestJs(body: SubmissionRequest, language: string) {
     /* =====================================================
        NESTJS CURRENTLY USES TYPESCRIPT
     ===================================================== */
 
-    if (
-      language !==
-      'typescript'
-    ) {
+    if (language !== 'typescript') {
       throw new BadRequestException(
         'NestJS practice problems currently require TypeScript.',
       );
@@ -1686,15 +1212,9 @@ export class SubmissionsService {
        HIDDEN TESTS
     ===================================================== */
 
-    const testCases =
-      getNestJsTestCases(
-        body.problemSlug,
-      );
+    const testCases = getNestJsTestCases(body.problemSlug);
 
-    if (
-      testCases.length ===
-      0
-    ) {
+    if (testCases.length === 0) {
       throw new BadRequestException(
         `No hidden test cases configured for ${body.problemSlug}.`,
       );
@@ -1704,16 +1224,9 @@ export class SubmissionsService {
        FRAMEWORK FILES
     ===================================================== */
 
-    const files =
-      this.getNestJsSubmissionFiles(
-        body,
-        testCases,
-      );
+    const files = this.getNestJsSubmissionFiles(body, testCases);
 
-    if (
-      files.length ===
-      0
-    ) {
+    if (files.length === 0) {
       throw new BadRequestException(
         'At least one NestJS framework file is required.',
       );
@@ -1726,37 +1239,23 @@ export class SubmissionsService {
     let response: Response;
 
     try {
-      response =
-        await fetch(
-          `${this.judgeUrl}/run/framework`,
-          {
-            method:
-              'POST',
+      response = await fetch(`${this.judgeUrl}/run/framework`, {
+        method: 'POST',
 
-            headers: {
-              'Content-Type':
-                'application/json',
-            },
+        headers: {
+          'Content-Type': 'application/json',
+        },
 
-            body:
-              JSON.stringify({
-                problemSlug:
-                  body.problemSlug,
+        body: JSON.stringify({
+          problemSlug: body.problemSlug,
 
-                runtime:
-                  'nestjs',
+          runtime: 'nestjs',
 
-                files,
-              }),
-          },
-        );
-    } catch (
-      error
-    ) {
-      console.error(
-        'Unable to connect to NestJS judge:',
-        error,
-      );
+          files,
+        }),
+      });
+    } catch (error) {
+      console.error('Unable to connect to NestJS judge:', error);
 
       throw new BadGatewayException(
         'Unable to connect to the NestJS code judge.',
@@ -1767,12 +1266,10 @@ export class SubmissionsService {
        PARSE JUDGE RESPONSE
     ===================================================== */
 
-    let judgeResult:
-      JudgeResponse;
+    let judgeResult: JudgeResponse;
 
     try {
-      judgeResult =
-        (await response.json()) as JudgeResponse;
+      judgeResult = (await response.json()) as JudgeResponse;
     } catch {
       throw new BadGatewayException(
         'Invalid response received from NestJS code judge.',
@@ -1783,12 +1280,9 @@ export class SubmissionsService {
        JUDGE HTTP ERROR
     ===================================================== */
 
-    if (
-      !response.ok
-    ) {
+    if (!response.ok) {
       throw new BadGatewayException(
-        judgeResult.message ??
-          'NestJS judge rejected the submission.',
+        judgeResult.message ?? 'NestJS judge rejected the submission.',
       );
     }
 
@@ -1796,10 +1290,7 @@ export class SubmissionsService {
        UNSUPPORTED RUNTIME
     ===================================================== */
 
-    if (
-      judgeResult.status ===
-      'UNSUPPORTED_RUNTIME'
-    ) {
+    if (judgeResult.status === 'UNSUPPORTED_RUNTIME') {
       throw new BadGatewayException(
         judgeResult.message ??
           'Judge does not support the NestJS framework runtime.',
@@ -1810,13 +1301,9 @@ export class SubmissionsService {
        INVALID REQUEST
     ===================================================== */
 
-    if (
-      judgeResult.status ===
-      'INVALID_REQUEST'
-    ) {
+    if (judgeResult.status === 'INVALID_REQUEST') {
       throw new BadGatewayException(
-        judgeResult.message ??
-          'NestJS judge rejected the framework files.',
+        judgeResult.message ?? 'NestJS judge rejected the framework files.',
       );
     }
 
@@ -1824,13 +1311,9 @@ export class SubmissionsService {
        INTERNAL JUDGE ERROR
     ===================================================== */
 
-    if (
-      judgeResult.status ===
-      'INTERNAL_ERROR'
-    ) {
+    if (judgeResult.status === 'INTERNAL_ERROR') {
       throw new BadGatewayException(
-        judgeResult.message ??
-          'Internal NestJS judge error.',
+        judgeResult.message ?? 'Internal NestJS judge error.',
       );
     }
 
@@ -1838,57 +1321,39 @@ export class SubmissionsService {
        COMPILATION / NESTJS TYPESCRIPT ERROR
     ===================================================== */
 
-    if (
-      judgeResult.status ===
-      'COMPILATION_ERROR'
-    ) {
+    if (judgeResult.status === 'COMPILATION_ERROR') {
       return {
-        problemSlug:
-          body.problemSlug,
+        problemSlug: body.problemSlug,
 
         language,
 
-        runtime:
-          'nestjs',
+        runtime: 'nestjs',
 
-        status:
-          'COMPILATION_ERROR',
+        status: 'COMPILATION_ERROR',
 
-        passedTests:
-          0,
+        passedTests: 0,
 
-        totalTests:
-          testCases.length,
+        totalTests: testCases.length,
 
-        score:
-          0,
+        score: 0,
 
         results: [
           {
-            testNumber:
-              1,
+            testNumber: 1,
 
-            passed:
-              false,
+            passed: false,
 
-            status:
-              'COMPILATION_ERROR',
+            status: 'COMPILATION_ERROR',
 
-            output:
-              judgeResult.output ??
-              '',
+            output: judgeResult.output ?? '',
 
-            expectedOutput:
-              '',
+            expectedOutput: '',
 
-            stderr:
-              judgeResult.stderr ??
-              '',
+            stderr: judgeResult.stderr ?? '',
           },
         ],
 
-        context:
-          body.context,
+        context: body.context,
       };
     }
 
@@ -1896,57 +1361,39 @@ export class SubmissionsService {
        TIME LIMIT
     ===================================================== */
 
-    if (
-      judgeResult.status ===
-      'TIME_LIMIT_EXCEEDED'
-    ) {
+    if (judgeResult.status === 'TIME_LIMIT_EXCEEDED') {
       return {
-        problemSlug:
-          body.problemSlug,
+        problemSlug: body.problemSlug,
 
         language,
 
-        runtime:
-          'nestjs',
+        runtime: 'nestjs',
 
-        status:
-          'TIME_LIMIT_EXCEEDED',
+        status: 'TIME_LIMIT_EXCEEDED',
 
-        passedTests:
-          0,
+        passedTests: 0,
 
-        totalTests:
-          testCases.length,
+        totalTests: testCases.length,
 
-        score:
-          0,
+        score: 0,
 
         results: [
           {
-            testNumber:
-              1,
+            testNumber: 1,
 
-            passed:
-              false,
+            passed: false,
 
-            status:
-              'TIME_LIMIT_EXCEEDED',
+            status: 'TIME_LIMIT_EXCEEDED',
 
-            output:
-              judgeResult.output ??
-              '',
+            output: judgeResult.output ?? '',
 
-            expectedOutput:
-              '',
+            expectedOutput: '',
 
-            stderr:
-              judgeResult.stderr ??
-              '',
+            stderr: judgeResult.stderr ?? '',
           },
         ],
 
-        context:
-          body.context,
+        context: body.context,
       };
     }
 
@@ -1954,57 +1401,39 @@ export class SubmissionsService {
        RUNTIME ERROR
     ===================================================== */
 
-    if (
-      judgeResult.status ===
-      'RUNTIME_ERROR'
-    ) {
+    if (judgeResult.status === 'RUNTIME_ERROR') {
       return {
-        problemSlug:
-          body.problemSlug,
+        problemSlug: body.problemSlug,
 
         language,
 
-        runtime:
-          'nestjs',
+        runtime: 'nestjs',
 
-        status:
-          'RUNTIME_ERROR',
+        status: 'RUNTIME_ERROR',
 
-        passedTests:
-          0,
+        passedTests: 0,
 
-        totalTests:
-          testCases.length,
+        totalTests: testCases.length,
 
-        score:
-          0,
+        score: 0,
 
         results: [
           {
-            testNumber:
-              1,
+            testNumber: 1,
 
-            passed:
-              false,
+            passed: false,
 
-            status:
-              'RUNTIME_ERROR',
+            status: 'RUNTIME_ERROR',
 
-            output:
-              judgeResult.output ??
-              '',
+            output: judgeResult.output ?? '',
 
-            expectedOutput:
-              '',
+            expectedOutput: '',
 
-            stderr:
-              judgeResult.stderr ??
-              '',
+            stderr: judgeResult.stderr ?? '',
           },
         ],
 
-        context:
-          body.context,
+        context: body.context,
       };
     }
 
@@ -2012,10 +1441,7 @@ export class SubmissionsService {
        COMPILATION MUST SUCCEED BEFORE HIDDEN TEST VALIDATION
     ===================================================== */
 
-    if (
-      judgeResult.status !==
-      'SUCCESS'
-    ) {
+    if (judgeResult.status !== 'SUCCESS') {
       throw new BadGatewayException(
         judgeResult.message ??
           `Unexpected NestJS judge status: ${judgeResult.status}`,
@@ -2042,55 +1468,33 @@ export class SubmissionsService {
       message?: string;
     }> = [];
 
-    let passedTests =
-      0;
+    let passedTests = 0;
 
-    for (
-      let index = 0;
-      index < testCases.length;
-      index += 1
-    ) {
-      const testCase =
-        testCases[index];
+    for (let index = 0; index < testCases.length; index += 1) {
+      const testCase = testCases[index];
 
-      const validation =
-        this.validateNestJsHiddenTest(
-          files,
-          testCase,
-        );
+      const validation = this.validateNestJsHiddenTest(files, testCase);
 
-      if (
-        validation.passed
-      ) {
-        passedTests +=
-          1;
+      if (validation.passed) {
+        passedTests += 1;
       }
 
       results.push({
-        testNumber:
-          index + 1,
+        testNumber: index + 1,
 
-        passed:
-          validation.passed,
+        passed: validation.passed,
 
-        status:
-          validation.passed
-            ? 'PASSED'
-            : 'FAILED',
+        status: validation.passed ? 'PASSED' : 'FAILED',
 
-        output:
-          '',
+        output: '',
 
-        expectedOutput:
-          '',
+        expectedOutput: '',
 
-        stderr:
-          '',
+        stderr: '',
 
         ...(validation.message
           ? {
-              message:
-                validation.message,
+              message: validation.message,
             }
           : {}),
       });
@@ -2100,37 +1504,21 @@ export class SubmissionsService {
        FINAL RESULT
     ===================================================== */
 
-    const totalTests =
-      testCases.length;
+    const totalTests = testCases.length;
 
-    const allTestsPassed =
-      totalTests > 0 &&
-      passedTests ===
-        totalTests;
+    const allTestsPassed = totalTests > 0 && passedTests === totalTests;
 
     const score =
-      totalTests > 0
-        ? Math.round(
-            (
-              passedTests /
-              totalTests
-            ) * 100,
-          )
-        : 0;
+      totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
 
     return {
-      problemSlug:
-        body.problemSlug,
+      problemSlug: body.problemSlug,
 
       language,
 
-      runtime:
-        'nestjs',
+      runtime: 'nestjs',
 
-      status:
-        allTestsPassed
-          ? 'ACCEPTED'
-          : 'WRONG_ANSWER',
+      status: allTestsPassed ? 'ACCEPTED' : 'WRONG_ANSWER',
 
       passedTests,
 
@@ -2140,12 +1528,9 @@ export class SubmissionsService {
 
       results,
 
-      buildOutput:
-        judgeResult.output ??
-        '',
+      buildOutput: judgeResult.output ?? '',
 
-      context:
-        body.context,
+      context: body.context,
     };
   }
 
@@ -2169,59 +1554,22 @@ export class SubmissionsService {
     body: SubmissionRequest,
     testCases: DjangoHiddenTestCase[],
   ): FrameworkSubmissionFile[] {
-    if (
-      Array.isArray(
-        body.files,
-      ) &&
-      body.files.length > 0
-    ) {
-      return body.files.map(
-        (
-          file,
-        ) => ({
-          path:
-            this.normalizeFrameworkFilePath(
-              file.path,
-            ),
+    if (Array.isArray(body.files) && body.files.length > 0) {
+      return body.files.map((file) => ({
+        path: this.normalizeFrameworkFilePath(file.path),
 
-          language:
-            file.language,
+        language: file.language,
 
-          content:
-            file.content,
-        }),
-      );
+        content: file.content,
+      }));
     }
 
-    const primaryFilePath =
-      testCases
-        .flatMap(
-          (
-            testCase,
-          ) =>
-            testCase.requiredFiles ??
-            [],
-        )
-        .map(
-          (
-            filePath,
-          ) =>
-            this.normalizeFrameworkFilePath(
-              filePath,
-            ),
-        )
-        .find(
-          (
-            filePath,
-          ) =>
-            Boolean(
-              filePath,
-            ),
-        );
+    const primaryFilePath = testCases
+      .flatMap((testCase) => testCase.requiredFiles ?? [])
+      .map((filePath) => this.normalizeFrameworkFilePath(filePath))
+      .find((filePath) => Boolean(filePath));
 
-    if (
-      !primaryFilePath
-    ) {
+    if (!primaryFilePath) {
       throw new BadRequestException(
         `No Django learner file is configured for ${body.problemSlug}.`,
       );
@@ -2229,14 +1577,11 @@ export class SubmissionsService {
 
     return [
       {
-        path:
-          primaryFilePath,
+        path: primaryFilePath,
 
-        language:
-          'python',
+        language: 'python',
 
-        content:
-          body.code,
+        content: body.code,
       },
     ];
   }
@@ -2249,24 +1594,13 @@ export class SubmissionsService {
     files: FrameworkSubmissionFile[],
     filePath: string,
   ): string | null {
-    const normalizedPath =
-      this.normalizeFrameworkFilePath(
-        filePath,
-      );
+    const normalizedPath = this.normalizeFrameworkFilePath(filePath);
 
-    const file =
-      files.find(
-        (
-          item,
-        ) =>
-          this.normalizeFrameworkFilePath(
-            item.path,
-          ) ===
-          normalizedPath,
-      );
+    const file = files.find(
+      (item) => this.normalizeFrameworkFilePath(item.path) === normalizedPath,
+    );
 
-    return file?.content ??
-      null;
+    return file?.content ?? null;
   }
 
   /* =======================================================
@@ -2286,19 +1620,11 @@ export class SubmissionsService {
     flags: string | undefined,
     code: string,
   ) {
-    const expression =
-      new RegExp(
-        pattern,
-        flags ??
-          'm',
-      );
+    const expression = new RegExp(pattern, flags ?? 'm');
 
-    expression.lastIndex =
-      0;
+    expression.lastIndex = 0;
 
-    return expression.test(
-      code,
-    );
+    return expression.test(code);
   }
 
   /* =======================================================
@@ -2309,122 +1635,66 @@ export class SubmissionsService {
     files: FrameworkSubmissionFile[],
     testCase: DjangoHiddenTestCase,
   ): DjangoValidationResult {
-    const requiredFiles =
-      testCase.requiredFiles ??
-      [];
+    const requiredFiles = testCase.requiredFiles ?? [];
 
-    for (
-      const filePath of requiredFiles
-    ) {
-      const content =
-        this.getDjangoFileContent(
-          files,
-          filePath,
-        );
+    for (const filePath of requiredFiles) {
+      const content = this.getDjangoFileContent(files, filePath);
 
-      if (
-        content ===
-        null
-      ) {
+      if (content === null) {
         return {
-          passed:
-            false,
+          passed: false,
 
-          message:
-            `Required file is missing: ${filePath}`,
+          message: `Required file is missing: ${filePath}`,
         };
       }
     }
 
-    const requiredChecks =
-      testCase.requiredSourceChecks ??
-      [];
+    const requiredChecks = testCase.requiredSourceChecks ?? [];
 
-    for (
-      const check of requiredChecks
-    ) {
-      const content =
-        this.getDjangoFileContent(
-          files,
-          check.filePath,
-        );
+    for (const check of requiredChecks) {
+      const content = this.getDjangoFileContent(files, check.filePath);
 
-      if (
-        content ===
-        null
-      ) {
+      if (content === null) {
         return {
-          passed:
-            false,
+          passed: false,
 
-          message:
-            `Required file is missing: ${check.filePath}`,
+          message: `Required file is missing: ${check.filePath}`,
         };
       }
 
-      if (
-        !this.matchesDjangoPattern(
-          check.pattern,
-          check.flags,
-          content,
-        )
-      ) {
+      if (!this.matchesDjangoPattern(check.pattern, check.flags, content)) {
         return {
-          passed:
-            false,
+          passed: false,
 
-          message:
-            check.message,
+          message: check.message,
         };
       }
     }
 
-    const forbiddenChecks =
-      testCase.forbiddenSourceChecks ??
-      [];
+    const forbiddenChecks = testCase.forbiddenSourceChecks ?? [];
 
-    for (
-      const check of forbiddenChecks
-    ) {
-      const content =
-        this.getDjangoFileContent(
-          files,
-          check.filePath,
-        );
+    for (const check of forbiddenChecks) {
+      const content = this.getDjangoFileContent(files, check.filePath);
 
-      if (
-        content ===
-        null
-      ) {
+      if (content === null) {
         return {
-          passed:
-            false,
+          passed: false,
 
-          message:
-            `Required file is missing: ${check.filePath}`,
+          message: `Required file is missing: ${check.filePath}`,
         };
       }
 
-      if (
-        this.matchesDjangoPattern(
-          check.pattern,
-          check.flags,
-          content,
-        )
-      ) {
+      if (this.matchesDjangoPattern(check.pattern, check.flags, content)) {
         return {
-          passed:
-            false,
+          passed: false,
 
-          message:
-            check.message,
+          message: check.message,
         };
       }
     }
 
     return {
-      passed:
-        true,
+      passed: true,
     };
   }
 
@@ -2447,18 +1717,12 @@ export class SubmissionsService {
      Hidden test definitions never go to the learner browser.
   ======================================================= */
 
-  private async submitDjango(
-    body: SubmissionRequest,
-    language: string,
-  ) {
+  private async submitDjango(body: SubmissionRequest, language: string) {
     /* =====================================================
        DJANGO CURRENTLY USES PYTHON
     ===================================================== */
 
-    if (
-      language !==
-      'python'
-    ) {
+    if (language !== 'python') {
       throw new BadRequestException(
         'Django practice problems currently require Python.',
       );
@@ -2468,15 +1732,9 @@ export class SubmissionsService {
        HIDDEN TESTS
     ===================================================== */
 
-    const testCases =
-      getDjangoTestCases(
-        body.problemSlug,
-      );
+    const testCases = getDjangoTestCases(body.problemSlug);
 
-    if (
-      testCases.length ===
-      0
-    ) {
+    if (testCases.length === 0) {
       throw new BadRequestException(
         `No hidden test cases configured for ${body.problemSlug}.`,
       );
@@ -2486,16 +1744,9 @@ export class SubmissionsService {
        FRAMEWORK FILES
     ===================================================== */
 
-    const files =
-      this.getDjangoSubmissionFiles(
-        body,
-        testCases,
-      );
+    const files = this.getDjangoSubmissionFiles(body, testCases);
 
-    if (
-      files.length ===
-      0
-    ) {
+    if (files.length === 0) {
       throw new BadRequestException(
         'At least one Django framework file is required.',
       );
@@ -2508,37 +1759,23 @@ export class SubmissionsService {
     let response: Response;
 
     try {
-      response =
-        await fetch(
-          `${this.judgeUrl}/run/framework`,
-          {
-            method:
-              'POST',
+      response = await fetch(`${this.judgeUrl}/run/framework`, {
+        method: 'POST',
 
-            headers: {
-              'Content-Type':
-                'application/json',
-            },
+        headers: {
+          'Content-Type': 'application/json',
+        },
 
-            body:
-              JSON.stringify({
-                problemSlug:
-                  body.problemSlug,
+        body: JSON.stringify({
+          problemSlug: body.problemSlug,
 
-                runtime:
-                  'django',
+          runtime: 'django',
 
-                files,
-              }),
-          },
-        );
-    } catch (
-      error
-    ) {
-      console.error(
-        'Unable to connect to Django judge:',
-        error,
-      );
+          files,
+        }),
+      });
+    } catch (error) {
+      console.error('Unable to connect to Django judge:', error);
 
       throw new BadGatewayException(
         'Unable to connect to the Django code judge.',
@@ -2549,12 +1786,10 @@ export class SubmissionsService {
        PARSE JUDGE RESPONSE
     ===================================================== */
 
-    let judgeResult:
-      JudgeResponse;
+    let judgeResult: JudgeResponse;
 
     try {
-      judgeResult =
-        (await response.json()) as JudgeResponse;
+      judgeResult = (await response.json()) as JudgeResponse;
     } catch {
       throw new BadGatewayException(
         'Invalid response received from Django code judge.',
@@ -2565,12 +1800,9 @@ export class SubmissionsService {
        JUDGE HTTP ERROR
     ===================================================== */
 
-    if (
-      !response.ok
-    ) {
+    if (!response.ok) {
       throw new BadGatewayException(
-        judgeResult.message ??
-          'Django judge rejected the submission.',
+        judgeResult.message ?? 'Django judge rejected the submission.',
       );
     }
 
@@ -2578,10 +1810,7 @@ export class SubmissionsService {
        UNSUPPORTED RUNTIME
     ===================================================== */
 
-    if (
-      judgeResult.status ===
-      'UNSUPPORTED_RUNTIME'
-    ) {
+    if (judgeResult.status === 'UNSUPPORTED_RUNTIME') {
       throw new BadGatewayException(
         judgeResult.message ??
           'Judge does not support the Django framework runtime.',
@@ -2592,13 +1821,9 @@ export class SubmissionsService {
        INVALID REQUEST
     ===================================================== */
 
-    if (
-      judgeResult.status ===
-      'INVALID_REQUEST'
-    ) {
+    if (judgeResult.status === 'INVALID_REQUEST') {
       throw new BadGatewayException(
-        judgeResult.message ??
-          'Django judge rejected the framework files.',
+        judgeResult.message ?? 'Django judge rejected the framework files.',
       );
     }
 
@@ -2606,13 +1831,9 @@ export class SubmissionsService {
        INTERNAL JUDGE ERROR
     ===================================================== */
 
-    if (
-      judgeResult.status ===
-      'INTERNAL_ERROR'
-    ) {
+    if (judgeResult.status === 'INTERNAL_ERROR') {
       throw new BadGatewayException(
-        judgeResult.message ??
-          'Internal Django judge error.',
+        judgeResult.message ?? 'Internal Django judge error.',
       );
     }
 
@@ -2620,57 +1841,39 @@ export class SubmissionsService {
        PYTHON / DJANGO VALIDATION ERROR
     ===================================================== */
 
-    if (
-      judgeResult.status ===
-      'COMPILATION_ERROR'
-    ) {
+    if (judgeResult.status === 'COMPILATION_ERROR') {
       return {
-        problemSlug:
-          body.problemSlug,
+        problemSlug: body.problemSlug,
 
         language,
 
-        runtime:
-          'django',
+        runtime: 'django',
 
-        status:
-          'COMPILATION_ERROR',
+        status: 'COMPILATION_ERROR',
 
-        passedTests:
-          0,
+        passedTests: 0,
 
-        totalTests:
-          testCases.length,
+        totalTests: testCases.length,
 
-        score:
-          0,
+        score: 0,
 
         results: [
           {
-            testNumber:
-              1,
+            testNumber: 1,
 
-            passed:
-              false,
+            passed: false,
 
-            status:
-              'COMPILATION_ERROR',
+            status: 'COMPILATION_ERROR',
 
-            output:
-              judgeResult.output ??
-              '',
+            output: judgeResult.output ?? '',
 
-            expectedOutput:
-              '',
+            expectedOutput: '',
 
-            stderr:
-              judgeResult.stderr ??
-              '',
+            stderr: judgeResult.stderr ?? '',
           },
         ],
 
-        context:
-          body.context,
+        context: body.context,
       };
     }
 
@@ -2678,57 +1881,39 @@ export class SubmissionsService {
        TIME LIMIT
     ===================================================== */
 
-    if (
-      judgeResult.status ===
-      'TIME_LIMIT_EXCEEDED'
-    ) {
+    if (judgeResult.status === 'TIME_LIMIT_EXCEEDED') {
       return {
-        problemSlug:
-          body.problemSlug,
+        problemSlug: body.problemSlug,
 
         language,
 
-        runtime:
-          'django',
+        runtime: 'django',
 
-        status:
-          'TIME_LIMIT_EXCEEDED',
+        status: 'TIME_LIMIT_EXCEEDED',
 
-        passedTests:
-          0,
+        passedTests: 0,
 
-        totalTests:
-          testCases.length,
+        totalTests: testCases.length,
 
-        score:
-          0,
+        score: 0,
 
         results: [
           {
-            testNumber:
-              1,
+            testNumber: 1,
 
-            passed:
-              false,
+            passed: false,
 
-            status:
-              'TIME_LIMIT_EXCEEDED',
+            status: 'TIME_LIMIT_EXCEEDED',
 
-            output:
-              judgeResult.output ??
-              '',
+            output: judgeResult.output ?? '',
 
-            expectedOutput:
-              '',
+            expectedOutput: '',
 
-            stderr:
-              judgeResult.stderr ??
-              '',
+            stderr: judgeResult.stderr ?? '',
           },
         ],
 
-        context:
-          body.context,
+        context: body.context,
       };
     }
 
@@ -2736,57 +1921,39 @@ export class SubmissionsService {
        RUNTIME ERROR
     ===================================================== */
 
-    if (
-      judgeResult.status ===
-      'RUNTIME_ERROR'
-    ) {
+    if (judgeResult.status === 'RUNTIME_ERROR') {
       return {
-        problemSlug:
-          body.problemSlug,
+        problemSlug: body.problemSlug,
 
         language,
 
-        runtime:
-          'django',
+        runtime: 'django',
 
-        status:
-          'RUNTIME_ERROR',
+        status: 'RUNTIME_ERROR',
 
-        passedTests:
-          0,
+        passedTests: 0,
 
-        totalTests:
-          testCases.length,
+        totalTests: testCases.length,
 
-        score:
-          0,
+        score: 0,
 
         results: [
           {
-            testNumber:
-              1,
+            testNumber: 1,
 
-            passed:
-              false,
+            passed: false,
 
-            status:
-              'RUNTIME_ERROR',
+            status: 'RUNTIME_ERROR',
 
-            output:
-              judgeResult.output ??
-              '',
+            output: judgeResult.output ?? '',
 
-            expectedOutput:
-              '',
+            expectedOutput: '',
 
-            stderr:
-              judgeResult.stderr ??
-              '',
+            stderr: judgeResult.stderr ?? '',
           },
         ],
 
-        context:
-          body.context,
+        context: body.context,
       };
     }
 
@@ -2794,10 +1961,7 @@ export class SubmissionsService {
        DJANGO VALIDATION MUST SUCCEED BEFORE HIDDEN TEST VALIDATION
     ===================================================== */
 
-    if (
-      judgeResult.status !==
-      'SUCCESS'
-    ) {
+    if (judgeResult.status !== 'SUCCESS') {
       throw new BadGatewayException(
         judgeResult.message ??
           `Unexpected Django judge status: ${judgeResult.status}`,
@@ -2824,55 +1988,33 @@ export class SubmissionsService {
       message?: string;
     }> = [];
 
-    let passedTests =
-      0;
+    let passedTests = 0;
 
-    for (
-      let index = 0;
-      index < testCases.length;
-      index += 1
-    ) {
-      const testCase =
-        testCases[index];
+    for (let index = 0; index < testCases.length; index += 1) {
+      const testCase = testCases[index];
 
-      const validation =
-        this.validateDjangoHiddenTest(
-          files,
-          testCase,
-        );
+      const validation = this.validateDjangoHiddenTest(files, testCase);
 
-      if (
-        validation.passed
-      ) {
-        passedTests +=
-          1;
+      if (validation.passed) {
+        passedTests += 1;
       }
 
       results.push({
-        testNumber:
-          index + 1,
+        testNumber: index + 1,
 
-        passed:
-          validation.passed,
+        passed: validation.passed,
 
-        status:
-          validation.passed
-            ? 'PASSED'
-            : 'FAILED',
+        status: validation.passed ? 'PASSED' : 'FAILED',
 
-        output:
-          '',
+        output: '',
 
-        expectedOutput:
-          '',
+        expectedOutput: '',
 
-        stderr:
-          '',
+        stderr: '',
 
         ...(validation.message
           ? {
-              message:
-                validation.message,
+              message: validation.message,
             }
           : {}),
       });
@@ -2882,37 +2024,21 @@ export class SubmissionsService {
        FINAL RESULT
     ===================================================== */
 
-    const totalTests =
-      testCases.length;
+    const totalTests = testCases.length;
 
-    const allTestsPassed =
-      totalTests > 0 &&
-      passedTests ===
-        totalTests;
+    const allTestsPassed = totalTests > 0 && passedTests === totalTests;
 
     const score =
-      totalTests > 0
-        ? Math.round(
-            (
-              passedTests /
-              totalTests
-            ) * 100,
-          )
-        : 0;
+      totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
 
     return {
-      problemSlug:
-        body.problemSlug,
+      problemSlug: body.problemSlug,
 
       language,
 
-      runtime:
-        'django',
+      runtime: 'django',
 
-      status:
-        allTestsPassed
-          ? 'ACCEPTED'
-          : 'WRONG_ANSWER',
+      status: allTestsPassed ? 'ACCEPTED' : 'WRONG_ANSWER',
 
       passedTests,
 
@@ -2922,12 +2048,9 @@ export class SubmissionsService {
 
       results,
 
-      buildOutput:
-        judgeResult.output ??
-        '',
+      buildOutput: judgeResult.output ?? '',
 
-      context:
-        body.context,
+      context: body.context,
     };
   }
 
@@ -2942,29 +2065,14 @@ export class SubmissionsService {
   private getSpringBootSubmissionFiles(
     body: SubmissionRequest,
   ): FrameworkSubmissionFile[] {
-    if (
-      Array.isArray(
-        body.files,
-      ) &&
-      body.files.length > 0
-    ) {
-      return body.files.map(
-        (
-          file,
-        ) => ({
-          path:
-            this.normalizeFrameworkFilePath(
-              file.path,
-            ),
+    if (Array.isArray(body.files) && body.files.length > 0) {
+      return body.files.map((file) => ({
+        path: this.normalizeFrameworkFilePath(file.path),
 
-          language:
-            file.language ||
-            'java',
+        language: file.language || 'java',
 
-          content:
-            file.content,
-        }),
-      );
+        content: file.content,
+      }));
     }
 
     throw new BadRequestException(
@@ -2984,42 +2092,24 @@ export class SubmissionsService {
      6. Return ACCEPTED / WRONG_ANSWER using judge test results.
   ======================================================= */
 
-  private async submitSpringBoot(
-    body: SubmissionRequest,
-    language: string,
-  ) {
-    if (
-      language !==
-      'java'
-    ) {
+  private async submitSpringBoot(body: SubmissionRequest, language: string) {
+    if (language !== 'java') {
       throw new BadRequestException(
         'Spring Boot practice problems currently require Java.',
       );
     }
 
-    const testCases =
-      getSpringBootTestCases(
-        body.problemSlug,
-      );
+    const testCases = getSpringBootTestCases(body.problemSlug);
 
-    if (
-      testCases.length ===
-      0
-    ) {
+    if (testCases.length === 0) {
       throw new BadRequestException(
         `No hidden test cases configured for ${body.problemSlug}.`,
       );
     }
 
-    const files =
-      this.getSpringBootSubmissionFiles(
-        body,
-      );
+    const files = this.getSpringBootSubmissionFiles(body);
 
-    if (
-      files.length ===
-      0
-    ) {
+    if (files.length === 0) {
       throw new BadRequestException(
         'At least one Spring Boot framework file is required.',
       );
@@ -3028,370 +2118,224 @@ export class SubmissionsService {
     let response: Response;
 
     try {
-      response =
-        await fetch(
-          `${this.judgeUrl}/run/framework`,
-          {
-            method:
-              'POST',
+      response = await fetch(`${this.judgeUrl}/run/framework`, {
+        method: 'POST',
 
-            headers: {
-              'Content-Type':
-                'application/json',
-            },
+        headers: {
+          'Content-Type': 'application/json',
+        },
 
-            body:
-              JSON.stringify({
-                problemSlug:
-                  body.problemSlug,
+        body: JSON.stringify({
+          problemSlug: body.problemSlug,
 
-                runtime:
-                  'springboot',
+          runtime: 'springboot',
 
-                files,
+          files,
 
-                testCases,
-              }),
-          },
-        );
-    } catch (
-      error
-    ) {
-      console.error(
-        'Unable to connect to Spring Boot judge:',
-        error,
-      );
+          testCases,
+        }),
+      });
+    } catch (error) {
+      console.error('Unable to connect to Spring Boot judge:', error);
 
       throw new BadGatewayException(
         'Unable to connect to the Spring Boot code judge.',
       );
     }
 
-    let judgeResult:
-      SpringBootJudgeResponse;
+    let judgeResult: SpringBootJudgeResponse;
 
     try {
-      judgeResult =
-        (await response.json()) as SpringBootJudgeResponse;
+      judgeResult = (await response.json()) as SpringBootJudgeResponse;
     } catch {
       throw new BadGatewayException(
         'Invalid response received from Spring Boot code judge.',
       );
     }
 
-    if (
-      !response.ok
-    ) {
+    if (!response.ok) {
       throw new BadGatewayException(
-        judgeResult.message ??
-          'Spring Boot judge rejected the submission.',
+        judgeResult.message ?? 'Spring Boot judge rejected the submission.',
       );
     }
 
-    if (
-      judgeResult.status ===
-      'UNSUPPORTED_RUNTIME'
-    ) {
+    if (judgeResult.status === 'UNSUPPORTED_RUNTIME') {
       throw new BadGatewayException(
         judgeResult.message ??
           'Judge does not support the Spring Boot framework runtime.',
       );
     }
 
-    if (
-      judgeResult.status ===
-      'INVALID_REQUEST'
-    ) {
+    if (judgeResult.status === 'INVALID_REQUEST') {
       throw new BadGatewayException(
         judgeResult.message ??
           'Spring Boot judge rejected the framework files.',
       );
     }
 
-    if (
-      judgeResult.status ===
-      'INTERNAL_ERROR'
-    ) {
+    if (judgeResult.status === 'INTERNAL_ERROR') {
       throw new BadGatewayException(
-        judgeResult.message ??
-          'Internal Spring Boot judge error.',
+        judgeResult.message ?? 'Internal Spring Boot judge error.',
       );
     }
 
-    if (
-      judgeResult.status ===
-      'COMPILATION_ERROR'
-    ) {
+    if (judgeResult.status === 'COMPILATION_ERROR') {
       return {
-        problemSlug:
-          body.problemSlug,
+        problemSlug: body.problemSlug,
 
         language,
 
-        runtime:
-          'springboot',
+        runtime: 'springboot',
 
-        status:
-          'COMPILATION_ERROR',
+        status: 'COMPILATION_ERROR',
 
-        passedTests:
-          0,
+        passedTests: 0,
 
-        totalTests:
-          judgeResult.totalTests ??
-          testCases.length,
+        totalTests: judgeResult.totalTests ?? testCases.length,
 
-        score:
-          0,
+        score: 0,
 
-        results:
-          judgeResult.results ??
-          [
-            {
-              testNumber:
-                1,
+        results: judgeResult.results ?? [
+          {
+            testNumber: 1,
 
-              passed:
-                false,
+            passed: false,
 
-              status:
-                'COMPILATION_ERROR',
+            status: 'COMPILATION_ERROR',
 
-              output:
-                judgeResult.output ??
-                '',
+            output: judgeResult.output ?? '',
 
-              expectedOutput:
-                '',
+            expectedOutput: '',
 
-              stderr:
-                judgeResult.stderr ??
-                '',
-            },
-          ],
+            stderr: judgeResult.stderr ?? '',
+          },
+        ],
 
-        context:
-          body.context,
+        context: body.context,
       };
     }
 
-    if (
-      judgeResult.status ===
-      'TIME_LIMIT_EXCEEDED'
-    ) {
+    if (judgeResult.status === 'TIME_LIMIT_EXCEEDED') {
       return {
-        problemSlug:
-          body.problemSlug,
+        problemSlug: body.problemSlug,
 
         language,
 
-        runtime:
-          'springboot',
+        runtime: 'springboot',
 
-        status:
-          'TIME_LIMIT_EXCEEDED',
+        status: 'TIME_LIMIT_EXCEEDED',
 
-        passedTests:
-          judgeResult.passedTests ??
-          0,
+        passedTests: judgeResult.passedTests ?? 0,
 
-        totalTests:
-          judgeResult.totalTests ??
-          testCases.length,
+        totalTests: judgeResult.totalTests ?? testCases.length,
 
-        score:
-          judgeResult.score ??
-          0,
+        score: judgeResult.score ?? 0,
 
-        results:
-          judgeResult.results ??
-          [
-            {
-              testNumber:
-                1,
+        results: judgeResult.results ?? [
+          {
+            testNumber: 1,
 
-              passed:
-                false,
+            passed: false,
 
-              status:
-                'TIME_LIMIT_EXCEEDED',
+            status: 'TIME_LIMIT_EXCEEDED',
 
-              output:
-                judgeResult.output ??
-                '',
+            output: judgeResult.output ?? '',
 
-              expectedOutput:
-                '',
+            expectedOutput: '',
 
-              stderr:
-                judgeResult.stderr ??
-                '',
-            },
-          ],
+            stderr: judgeResult.stderr ?? '',
+          },
+        ],
 
-        context:
-          body.context,
+        context: body.context,
       };
     }
 
-    if (
-      judgeResult.status ===
-      'RUNTIME_ERROR'
-    ) {
+    if (judgeResult.status === 'RUNTIME_ERROR') {
       return {
-        problemSlug:
-          body.problemSlug,
+        problemSlug: body.problemSlug,
 
         language,
 
-        runtime:
-          'springboot',
+        runtime: 'springboot',
 
-        status:
-          'RUNTIME_ERROR',
+        status: 'RUNTIME_ERROR',
 
-        passedTests:
-          judgeResult.passedTests ??
-          0,
+        passedTests: judgeResult.passedTests ?? 0,
 
-        totalTests:
-          judgeResult.totalTests ??
-          testCases.length,
+        totalTests: judgeResult.totalTests ?? testCases.length,
 
-        score:
-          judgeResult.score ??
-          0,
+        score: judgeResult.score ?? 0,
 
-        results:
-          judgeResult.results ??
-          [
-            {
-              testNumber:
-                1,
+        results: judgeResult.results ?? [
+          {
+            testNumber: 1,
 
-              passed:
-                false,
+            passed: false,
 
-              status:
-                'RUNTIME_ERROR',
+            status: 'RUNTIME_ERROR',
 
-              output:
-                judgeResult.output ??
-                '',
+            output: judgeResult.output ?? '',
 
-              expectedOutput:
-                '',
+            expectedOutput: '',
 
-              stderr:
-                judgeResult.stderr ??
-                '',
-            },
-          ],
+            stderr: judgeResult.stderr ?? '',
+          },
+        ],
 
-        context:
-          body.context,
+        context: body.context,
       };
     }
 
-    if (
-      judgeResult.status !==
-      'SUCCESS'
-    ) {
+    if (judgeResult.status !== 'SUCCESS') {
       throw new BadGatewayException(
         judgeResult.message ??
           `Unexpected Spring Boot judge status: ${judgeResult.status}`,
       );
     }
 
-    const totalTests =
-      judgeResult.totalTests ??
-      testCases.length;
+    const totalTests = judgeResult.totalTests ?? testCases.length;
 
-    const normalizedResults =
-      (
-        judgeResult.results ??
-        []
-      ).map(
-        (
-          result,
-          index,
-        ) => ({
-          testNumber:
-            result.testNumber ??
-            index + 1,
+    const normalizedResults = (judgeResult.results ?? []).map(
+      (result, index) => ({
+        testNumber: result.testNumber ?? index + 1,
 
-          passed:
-            result.passed,
+        passed: result.passed,
 
-          status:
-            result.status ??
-            (
-              result.passed
-                ? 'PASSED'
-                : 'FAILED'
-            ),
+        status: result.status ?? (result.passed ? 'PASSED' : 'FAILED'),
 
-          output:
-            result.output ??
-            '',
+        output: result.output ?? '',
 
-          expectedOutput:
-            result.expectedOutput ??
-            '',
+        expectedOutput: result.expectedOutput ?? '',
 
-          stderr:
-            result.stderr ??
-            '',
+        stderr: result.stderr ?? '',
 
-          ...(result.message
-            ? {
-                message:
-                  result.message,
-              }
-            : {}),
-        }),
-      );
+        ...(result.message
+          ? {
+              message: result.message,
+            }
+          : {}),
+      }),
+    );
 
     const passedTests =
       judgeResult.passedTests ??
-      normalizedResults.filter(
-        (
-          result,
-        ) =>
-          result.passed,
-      ).length;
+      normalizedResults.filter((result) => result.passed).length;
 
-    const allTestsPassed =
-      totalTests > 0 &&
-      passedTests ===
-        totalTests;
+    const allTestsPassed = totalTests > 0 && passedTests === totalTests;
 
     const score =
       judgeResult.score ??
-      (
-        totalTests > 0
-          ? Math.round(
-              (
-                passedTests /
-                totalTests
-              ) * 100,
-            )
-          : 0
-      );
+      (totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0);
 
     return {
-      problemSlug:
-        body.problemSlug,
+      problemSlug: body.problemSlug,
 
       language,
 
-      runtime:
-        'springboot',
+      runtime: 'springboot',
 
-      status:
-        allTestsPassed
-          ? 'ACCEPTED'
-          : 'WRONG_ANSWER',
+      status: allTestsPassed ? 'ACCEPTED' : 'WRONG_ANSWER',
 
       passedTests,
 
@@ -3399,15 +2343,11 @@ export class SubmissionsService {
 
       score,
 
-      results:
-        normalizedResults,
+      results: normalizedResults,
 
-      buildOutput:
-        judgeResult.output ??
-        '',
+      buildOutput: judgeResult.output ?? '',
 
-      context:
-        body.context,
+      context: body.context,
     };
   }
 
@@ -3460,33 +2400,23 @@ export class SubmissionsService {
        C
     ===================================================== */
 
-    if (
-      language === 'c'
-    ) {
-      return getCTestCases(
-        problemSlug,
-      );
+    if (language === 'c') {
+      return getCTestCases(problemSlug);
     }
 
     /* =====================================================
        C++
     ===================================================== */
 
-    if (
-      language === 'cpp'
-    ) {
-      return getCppTestCases(
-        problemSlug,
-      );
+    if (language === 'cpp') {
+      return getCppTestCases(problemSlug);
     }
 
     /* =====================================================
        JAVASCRIPT / NODE.JS
     ===================================================== */
 
-    if (
-      language === 'javascript'
-    ) {
+    if (language === 'javascript') {
       /*
        * Node.js problems
        *
@@ -3497,14 +2427,8 @@ export class SubmissionsService {
        * node-url-hostname
        */
 
-      if (
-        problemSlug.startsWith(
-          'node-',
-        )
-      ) {
-        return getNodeJsTestCases(
-          problemSlug,
-        );
+      if (problemSlug.startsWith('node-')) {
+        return getNodeJsTestCases(problemSlug);
       }
 
       /*
@@ -3516,45 +2440,31 @@ export class SubmissionsService {
        * javascript-string-reverse
        */
 
-      return getJavaScriptTestCases(
-        problemSlug,
-      );
+      return getJavaScriptTestCases(problemSlug);
     }
 
     /* =====================================================
        TYPESCRIPT
     ===================================================== */
 
-    if (
-      language === 'typescript'
-    ) {
-      return getTypeScriptTestCases(
-        problemSlug,
-      );
+    if (language === 'typescript') {
+      return getTypeScriptTestCases(problemSlug);
     }
 
     /* =====================================================
        PYTHON MACHINE LEARNING
     ===================================================== */
 
-    if (
-      language === 'python-machine-learning'
-    ) {
-      return getPythonMachineLearningTestCases(
-        problemSlug,
-      );
+    if (language === 'python-machine-learning') {
+      return getPythonMachineLearningTestCases(problemSlug);
     }
 
     /* =====================================================
        PYTHON SPARK / PYSPARK
     ===================================================== */
 
-    if (
-      language === 'pyspark'
-    ) {
-      return getPythonSparkTestCases(
-        problemSlug,
-      );
+    if (language === 'pyspark') {
+      return getPythonSparkTestCases(problemSlug);
     }
 
     /* =====================================================
@@ -3564,10 +2474,7 @@ export class SubmissionsService {
        No separate AWS Docker image or judge endpoint needed.
     ===================================================== */
 
-    if (
-      language === 'python' &&
-      problemSlug.startsWith('aws-')
-    ) {
+    if (language === 'python' && problemSlug.startsWith('aws-')) {
       return getAwsTestCases(problemSlug);
     }
 
@@ -3579,10 +2486,7 @@ export class SubmissionsService {
        AWS and all other language lookups remain unchanged.
     ===================================================== */
 
-    if (
-      language === 'python' &&
-      problemSlug.startsWith('azure-')
-    ) {
+    if (language === 'python' && problemSlug.startsWith('azure-')) {
       return getAzureTestCases(problemSlug);
     }
 
@@ -3592,10 +2496,7 @@ export class SubmissionsService {
        Existing AWS, Azure and Python routing is preserved.
     ===================================================== */
 
-    if (
-      language === 'python' &&
-      problemSlug.startsWith('gcp-')
-    ) {
+    if (language === 'python' && problemSlug.startsWith('gcp-')) {
       return getGcpTestCases(problemSlug);
     }
 
@@ -3605,10 +2506,7 @@ export class SubmissionsService {
        Reuse the existing hidden-test grading loop and /run.
     ===================================================== */
 
-    if (
-      language === 'python' &&
-      problemSlug.startsWith('ai-ml-')
-    ) {
+    if (language === 'python' && problemSlug.startsWith('ai-ml-')) {
       return getAiMlTestCases(problemSlug);
     }
 
@@ -3630,72 +2528,48 @@ export class SubmissionsService {
        PYTHON
     ===================================================== */
 
-    if (
-      language === 'python'
-    ) {
-      return getPythonTestCases(
-        problemSlug,
-      );
+    if (language === 'python') {
+      return getPythonTestCases(problemSlug);
     }
 
     /* =====================================================
        JAVA
     ===================================================== */
 
-    if (
-      language === 'java'
-    ) {
-      return getJavaTestCases(
-        problemSlug,
-      );
+    if (language === 'java') {
+      return getJavaTestCases(problemSlug);
     }
 
     /* =====================================================
        C#
     ===================================================== */
 
-    if (
-      language === 'csharp'
-    ) {
-      return getCSharpTestCases(
-        problemSlug,
-      );
+    if (language === 'csharp') {
+      return getCSharpTestCases(problemSlug);
     }
 
     /* =====================================================
        PHP
     ===================================================== */
 
-    if (
-      language === 'php'
-    ) {
-      return getPhpTestCases(
-        problemSlug,
-      );
+    if (language === 'php') {
+      return getPhpTestCases(problemSlug);
     }
 
     /* =====================================================
        RUBY
     ===================================================== */
 
-    if (
-      language === 'ruby'
-    ) {
-      return getRubyTestCases(
-        problemSlug,
-      );
+    if (language === 'ruby') {
+      return getRubyTestCases(problemSlug);
     }
 
     /* =====================================================
        SWIFT
     ===================================================== */
 
-    if (
-      language === 'swift'
-    ) {
-      return getSwiftTestCases(
-        problemSlug,
-      );
+    if (language === 'swift') {
+      return getSwiftTestCases(problemSlug);
     }
 
     return [];
@@ -3713,53 +2587,28 @@ export class SubmissionsService {
     body: SubmissionRequest,
     testCases: AspNetCoreHiddenTestCase[],
   ): FrameworkSubmissionFile[] {
-    if (
-      Array.isArray(body.files) &&
-      body.files.length > 0
-    ) {
-      return body.files.map(
-        (file) => ({
-          path:
-            this.normalizeFrameworkFilePath(
-              file.path,
-            ),
+    if (Array.isArray(body.files) && body.files.length > 0) {
+      return body.files.map((file) => ({
+        path: this.normalizeFrameworkFilePath(file.path),
 
-          language:
-            file.language ||
-            'csharp',
+        language: file.language || 'csharp',
 
-          content:
-            file.content,
-        }),
-      );
+        content: file.content,
+      }));
     }
 
-    const requiredFile =
-      testCases
-        .flatMap(
-          (testCase) =>
-            testCase.requiredFiles ??
-            [],
-        )
-        .map(
-          (filePath) =>
-            this.normalizeFrameworkFilePath(
-              filePath,
-            ),
-        )
-        .find(Boolean);
+    const requiredFile = testCases
+      .flatMap((testCase) => testCase.requiredFiles ?? [])
+      .map((filePath) => this.normalizeFrameworkFilePath(filePath))
+      .find(Boolean);
 
     return [
       {
-        path:
-          requiredFile ||
-          'Program.cs',
+        path: requiredFile || 'Program.cs',
 
-        language:
-          'csharp',
+        language: 'csharp',
 
-        content:
-          body.code,
+        content: body.code,
       },
     ];
   }
@@ -3776,43 +2625,24 @@ export class SubmissionsService {
      6. Return ACCEPTED / WRONG_ANSWER.
   ======================================================= */
 
-  private async submitAspNetCore(
-    body: SubmissionRequest,
-    language: string,
-  ) {
-    if (
-      language !==
-      'csharp'
-    ) {
+  private async submitAspNetCore(body: SubmissionRequest, language: string) {
+    if (language !== 'csharp') {
       throw new BadRequestException(
         'ASP.NET Core practice problems currently require C#.',
       );
     }
 
-    const testCases =
-      getAspNetCoreTestCases(
-        body.problemSlug,
-      );
+    const testCases = getAspNetCoreTestCases(body.problemSlug);
 
-    if (
-      testCases.length ===
-      0
-    ) {
+    if (testCases.length === 0) {
       throw new BadRequestException(
         `No hidden test cases configured for ${body.problemSlug}.`,
       );
     }
 
-    const files =
-      this.getAspNetCoreSubmissionFiles(
-        body,
-        testCases,
-      );
+    const files = this.getAspNetCoreSubmissionFiles(body, testCases);
 
-    if (
-      files.length ===
-      0
-    ) {
+    if (files.length === 0) {
       throw new BadRequestException(
         'At least one ASP.NET Core framework file is required.',
       );
@@ -3821,205 +2651,134 @@ export class SubmissionsService {
     let response: Response;
 
     try {
-      response =
-        await fetch(
-          `${this.judgeUrl}/run/framework`,
-          {
-            method:
-              'POST',
+      response = await fetch(`${this.judgeUrl}/run/framework`, {
+        method: 'POST',
 
-            headers: {
-              'Content-Type':
-                'application/json',
-            },
+        headers: {
+          'Content-Type': 'application/json',
+        },
 
-            body:
-              JSON.stringify({
-                problemSlug:
-                  body.problemSlug,
+        body: JSON.stringify({
+          problemSlug: body.problemSlug,
 
-                runtime:
-                  'aspnetcore',
+          runtime: 'aspnetcore',
 
-                files,
+          files,
 
-                tests:
-                  testCases,
-              }),
-          },
-        );
-    } catch (
-      error
-    ) {
-      console.error(
-        'Unable to connect to ASP.NET Core judge:',
-        error,
-      );
+          tests: testCases,
+        }),
+      });
+    } catch (error) {
+      console.error('Unable to connect to ASP.NET Core judge:', error);
 
       throw new BadGatewayException(
         'Unable to connect to the ASP.NET Core code judge.',
       );
     }
 
-    let judgeResult:
-      AspNetCoreJudgeResponse;
+    let judgeResult: AspNetCoreJudgeResponse;
 
     try {
-      judgeResult =
-        (await response.json()) as AspNetCoreJudgeResponse;
+      judgeResult = (await response.json()) as AspNetCoreJudgeResponse;
     } catch {
       throw new BadGatewayException(
         'Invalid response received from ASP.NET Core code judge.',
       );
     }
 
-    if (
-      !response.ok
-    ) {
+    if (!response.ok) {
       throw new BadGatewayException(
-        judgeResult.message ??
-          'ASP.NET Core judge rejected the submission.',
+        judgeResult.message ?? 'ASP.NET Core judge rejected the submission.',
       );
     }
 
-    if (
-      judgeResult.status ===
-      'UNSUPPORTED_RUNTIME'
-    ) {
+    if (judgeResult.status === 'UNSUPPORTED_RUNTIME') {
       throw new BadGatewayException(
         judgeResult.message ??
           'Judge does not support the ASP.NET Core framework runtime.',
       );
     }
 
-    if (
-      judgeResult.status ===
-      'INVALID_REQUEST'
-    ) {
+    if (judgeResult.status === 'INVALID_REQUEST') {
       throw new BadGatewayException(
         judgeResult.message ??
           'ASP.NET Core judge rejected the framework files.',
       );
     }
 
-    if (
-      judgeResult.status ===
-      'INTERNAL_ERROR'
-    ) {
+    if (judgeResult.status === 'INTERNAL_ERROR') {
       throw new BadGatewayException(
-        judgeResult.message ??
-          'Internal ASP.NET Core judge error.',
+        judgeResult.message ?? 'Internal ASP.NET Core judge error.',
       );
     }
 
     if (
-      judgeResult.status ===
-        'COMPILATION_ERROR' ||
-      judgeResult.status ===
-        'RUNTIME_ERROR' ||
-      judgeResult.status ===
-        'TIME_LIMIT_EXCEEDED'
+      judgeResult.status === 'COMPILATION_ERROR' ||
+      judgeResult.status === 'RUNTIME_ERROR' ||
+      judgeResult.status === 'TIME_LIMIT_EXCEEDED'
     ) {
       return {
-        problemSlug:
-          body.problemSlug,
+        problemSlug: body.problemSlug,
 
         language,
 
-        runtime:
-          'aspnetcore',
+        runtime: 'aspnetcore',
 
-        status:
-          judgeResult.status,
+        status: judgeResult.status,
 
-        passedTests:
-          0,
+        passedTests: 0,
 
-        totalTests:
-          testCases.length,
+        totalTests: testCases.length,
 
-        score:
-          0,
+        score: 0,
 
-        results:
-          judgeResult.results ??
-          [
-            {
-              testNumber:
-                1,
+        results: judgeResult.results ?? [
+          {
+            testNumber: 1,
 
-              passed:
-                false,
+            passed: false,
 
-              status:
-                judgeResult.status,
+            status: judgeResult.status,
 
-              output:
-                judgeResult.output ??
-                '',
+            output: judgeResult.output ?? '',
 
-              expectedOutput:
-                '',
+            expectedOutput: '',
 
-              stderr:
-                judgeResult.stderr ??
-                '',
-            },
-          ],
+            stderr: judgeResult.stderr ?? '',
+          },
+        ],
 
-        context:
-          body.context,
+        context: body.context,
       };
     }
 
-    if (
-      judgeResult.status !==
-      'SUCCESS'
-    ) {
+    if (judgeResult.status !== 'SUCCESS') {
       throw new BadGatewayException(
         judgeResult.message ??
           `Unexpected ASP.NET Core judge status: ${judgeResult.status}`,
       );
     }
 
-    const results =
-      judgeResult.results ??
-      [];
+    const results = judgeResult.results ?? [];
 
-    const totalTests =
-      judgeResult.totalTests ??
-      testCases.length;
+    const totalTests = judgeResult.totalTests ?? testCases.length;
 
     const passedTests =
       judgeResult.passedTests ??
-      results.filter(
-        (result) =>
-          result.passed,
-      ).length;
+      results.filter((result) => result.passed).length;
 
     const score =
-      totalTests > 0
-        ? Math.round(
-            (
-              passedTests /
-              totalTests
-            ) * 100,
-          )
-        : 0;
+      totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
 
     return {
-      problemSlug:
-        body.problemSlug,
+      problemSlug: body.problemSlug,
 
       language,
 
-      runtime:
-        'aspnetcore',
+      runtime: 'aspnetcore',
 
       status:
-        totalTests > 0 &&
-        passedTests ===
-          totalTests
+        totalTests > 0 && passedTests === totalTests
           ? 'ACCEPTED'
           : 'WRONG_ANSWER',
 
@@ -4031,12 +2790,9 @@ export class SubmissionsService {
 
       results,
 
-      buildOutput:
-        judgeResult.output ??
-        '',
+      buildOutput: judgeResult.output ?? '',
 
-      context:
-        body.context,
+      context: body.context,
     };
   }
 
@@ -4052,41 +2808,23 @@ export class SubmissionsService {
   private getFastApiSubmissionFiles(
     body: SubmissionRequest,
   ): FrameworkSubmissionFile[] {
-    if (
-      Array.isArray(
-        body.files,
-      ) &&
-      body.files.length > 0
-    ) {
-      return body.files.map(
-        (
-          file,
-        ) => ({
-          path:
-            this.normalizeFrameworkFilePath(
-              file.path,
-            ),
+    if (Array.isArray(body.files) && body.files.length > 0) {
+      return body.files.map((file) => ({
+        path: this.normalizeFrameworkFilePath(file.path),
 
-          language:
-            file.language ||
-            'python',
+        language: file.language || 'python',
 
-          content:
-            file.content,
-        }),
-      );
+        content: file.content,
+      }));
     }
 
     return [
       {
-        path:
-          'main.py',
+        path: 'main.py',
 
-        language:
-          'python',
+        language: 'python',
 
-        content:
-          body.code,
+        content: body.code,
       },
     ];
   }
@@ -4106,65 +2844,39 @@ export class SubmissionsService {
      hidden framework tests are not exposed to the browser.
   ======================================================= */
 
-  private async submitFastApi(
-    body: SubmissionRequest,
-    language: string,
-  ) {
-    if (
-      language !==
-      'python'
-    ) {
+  private async submitFastApi(body: SubmissionRequest, language: string) {
+    if (language !== 'python') {
       throw new BadRequestException(
         'FastAPI practice problems currently require Python.',
       );
     }
 
-    const allTestCases =
-      getFastApiTestCases(
-        body.problemSlug,
-      );
+    const allTestCases = getFastApiTestCases(body.problemSlug);
 
     /*
      * The current FastAPI Judge runner executes HTTP tests.
      * Source checks remain server-side and are not sent to
      * the learner browser.
      */
-    const httpTestCases =
-      allTestCases.filter(
-        (
-          testCase,
-        ) =>
-          testCase.type ===
-          'http',
-      );
+    const httpTestCases = allTestCases.filter(
+      (testCase) => testCase.type === 'http',
+    );
 
-    if (
-      allTestCases.length ===
-      0
-    ) {
+    if (allTestCases.length === 0) {
       throw new BadRequestException(
         `No hidden test cases configured for ${body.problemSlug}.`,
       );
     }
 
-    if (
-      httpTestCases.length ===
-      0
-    ) {
+    if (httpTestCases.length === 0) {
       throw new BadRequestException(
         `No FastAPI HTTP hidden test cases configured for ${body.problemSlug}.`,
       );
     }
 
-    const files =
-      this.getFastApiSubmissionFiles(
-        body,
-      );
+    const files = this.getFastApiSubmissionFiles(body);
 
-    if (
-      files.length ===
-      0
-    ) {
+    if (files.length === 0) {
       throw new BadRequestException(
         'At least one FastAPI framework file is required.',
       );
@@ -4173,341 +2885,214 @@ export class SubmissionsService {
     let response: Response;
 
     try {
-      response =
-        await fetch(
-          `${this.judgeUrl}/run/framework`,
-          {
-            method:
-              'POST',
+      response = await fetch(`${this.judgeUrl}/run/framework`, {
+        method: 'POST',
 
-            headers: {
-              'Content-Type':
-                'application/json',
-            },
+        headers: {
+          'Content-Type': 'application/json',
+        },
 
-            body:
-              JSON.stringify({
-                problemSlug:
-                  body.problemSlug,
+        body: JSON.stringify({
+          problemSlug: body.problemSlug,
 
-                runtime:
-                  'fastapi',
+          runtime: 'fastapi',
 
-                files,
+          files,
 
-                // FastAPI compatibility: send the same hidden HTTP tests
-                // under both supported request keys. This prevents the
-                // framework dispatcher/runner from dropping the tests if
-                // one layer still reads `testCases` while another reads
-                // `tests`. Other framework/language flows are unchanged.
-                tests:
-                  httpTestCases,
+          // FastAPI compatibility: send the same hidden HTTP tests
+          // under both supported request keys. This prevents the
+          // framework dispatcher/runner from dropping the tests if
+          // one layer still reads `testCases` while another reads
+          // `tests`. Other framework/language flows are unchanged.
+          tests: httpTestCases,
 
-                testCases:
-                  httpTestCases,
-              }),
-          },
-        );
-    } catch (
-      error
-    ) {
-      console.error(
-        'Unable to connect to FastAPI judge:',
-        error,
-      );
+          testCases: httpTestCases,
+        }),
+      });
+    } catch (error) {
+      console.error('Unable to connect to FastAPI judge:', error);
 
       throw new BadGatewayException(
         'Unable to connect to the FastAPI code judge.',
       );
     }
 
-    let judgeResult:
-      SpringBootJudgeResponse;
+    let judgeResult: SpringBootJudgeResponse;
 
     try {
-      judgeResult =
-        (await response.json()) as SpringBootJudgeResponse;
+      judgeResult = (await response.json()) as SpringBootJudgeResponse;
     } catch {
       throw new BadGatewayException(
         'Invalid response received from FastAPI code judge.',
       );
     }
 
-    if (
-      !response.ok
-    ) {
+    if (!response.ok) {
       throw new BadGatewayException(
-        judgeResult.message ??
-          'FastAPI judge rejected the submission.',
+        judgeResult.message ?? 'FastAPI judge rejected the submission.',
       );
     }
 
-    if (
-      judgeResult.status ===
-      'UNSUPPORTED_RUNTIME'
-    ) {
+    if (judgeResult.status === 'UNSUPPORTED_RUNTIME') {
       throw new BadGatewayException(
         judgeResult.message ??
           'Judge does not support the FastAPI framework runtime.',
       );
     }
 
-    if (
-      judgeResult.status ===
-      'INVALID_REQUEST'
-    ) {
+    if (judgeResult.status === 'INVALID_REQUEST') {
       throw new BadGatewayException(
-        judgeResult.message ??
-          'FastAPI judge rejected the framework files.',
+        judgeResult.message ?? 'FastAPI judge rejected the framework files.',
+      );
+    }
+
+    if (judgeResult.status === 'INTERNAL_ERROR') {
+      throw new BadGatewayException(
+        judgeResult.message ?? 'Internal FastAPI judge error.',
       );
     }
 
     if (
-      judgeResult.status ===
-      'INTERNAL_ERROR'
-    ) {
-      throw new BadGatewayException(
-        judgeResult.message ??
-          'Internal FastAPI judge error.',
-      );
-    }
-
-    if (
-      judgeResult.status ===
-        'COMPILATION_ERROR' ||
-      judgeResult.status ===
-        'RUNTIME_ERROR' ||
-      judgeResult.status ===
-        'TIME_LIMIT_EXCEEDED'
+      judgeResult.status === 'COMPILATION_ERROR' ||
+      judgeResult.status === 'RUNTIME_ERROR' ||
+      judgeResult.status === 'TIME_LIMIT_EXCEEDED'
     ) {
       return {
-        problemSlug:
-          body.problemSlug,
+        problemSlug: body.problemSlug,
 
         language,
 
-        runtime:
-          'fastapi',
+        runtime: 'fastapi',
 
-        status:
-          judgeResult.status,
+        status: judgeResult.status,
 
-        passedTests:
-          0,
+        passedTests: 0,
 
-        totalTests:
-          httpTestCases.length,
+        totalTests: httpTestCases.length,
 
-        score:
-          0,
+        score: 0,
 
-        results:
-          judgeResult.results ??
-          [
-            {
-              testNumber:
-                1,
+        results: judgeResult.results ?? [
+          {
+            testNumber: 1,
 
-              passed:
-                false,
+            passed: false,
 
-              status:
-                judgeResult.status,
+            status: judgeResult.status,
 
-              output:
-                judgeResult.output ??
-                '',
+            output: judgeResult.output ?? '',
 
-              expectedOutput:
-                '',
+            expectedOutput: '',
 
-              stderr:
-                judgeResult.stderr ??
-                '',
+            stderr: judgeResult.stderr ?? '',
 
-              message:
-                judgeResult.message,
-            },
-          ],
+            message: judgeResult.message,
+          },
+        ],
 
-        context:
-          body.context,
+        context: body.context,
       };
     }
 
-    if (
-      judgeResult.status !==
-      'SUCCESS'
-    ) {
+    if (judgeResult.status !== 'SUCCESS') {
       throw new BadGatewayException(
         judgeResult.message ??
           `Unexpected FastAPI judge status: ${judgeResult.status}`,
       );
     }
 
-    const judgeResults =
-      judgeResult.results ??
-      [];
+    const judgeResults = judgeResult.results ?? [];
 
-    const normalizedResults =
-      judgeResults.map(
-        (
-          result,
-          index,
-        ) => ({
-          testNumber:
-            result.testNumber ??
-            index + 1,
+    const normalizedResults = judgeResults.map((result, index) => ({
+      testNumber: result.testNumber ?? index + 1,
 
-          passed:
-            result.passed,
+      passed: result.passed,
 
-          status:
-            result.status ??
-            (
-              result.passed
-                ? 'PASSED'
-                : 'FAILED'
-            ),
+      status: result.status ?? (result.passed ? 'PASSED' : 'FAILED'),
 
-          output:
-            result.output ??
-            '',
+      output: result.output ?? '',
 
-          expectedOutput:
-            result.expectedOutput ??
-            '',
+      expectedOutput: result.expectedOutput ?? '',
 
-          stderr:
-            result.stderr ??
-            '',
+      stderr: result.stderr ?? '',
 
-          ...(result.message
-            ? {
-                message:
-                  result.message,
-              }
-            : {}),
-        }),
-      );
+      ...(result.message
+        ? {
+            message: result.message,
+          }
+        : {}),
+    }));
 
     /*
      * A configured FastAPI submission must never be converted
      * into a fake stdout test. FastAPI is validated through
      * HTTP responses.
      */
-    const totalTests =
-      httpTestCases.length;
+    const totalTests = httpTestCases.length;
 
     const passedTests =
       judgeResult.passedTests ??
-      normalizedResults.filter(
-        (
-          result,
-        ) =>
-          result.passed,
-      ).length;
+      normalizedResults.filter((result) => result.passed).length;
 
     /*
      * If the Judge reports SUCCESS but returns no HTTP test
      * results, fail safely instead of producing 0/0 or treating
      * framework startup as a passed submission.
      */
-    if (
-      normalizedResults.length ===
-      0
-    ) {
+    if (normalizedResults.length === 0) {
       return {
-        problemSlug:
-          body.problemSlug,
+        problemSlug: body.problemSlug,
 
         language,
 
-        runtime:
-          'fastapi',
+        runtime: 'fastapi',
 
-        status:
-          'WRONG_ANSWER',
+        status: 'WRONG_ANSWER',
 
-        passedTests:
-          0,
+        passedTests: 0,
 
         totalTests,
 
-        score:
-          0,
+        score: 0,
 
-        results:
-          httpTestCases.map(
-            (
-              testCase,
-              index,
-            ) => ({
-              testNumber:
-                index + 1,
+        results: httpTestCases.map((testCase, index) => ({
+          testNumber: index + 1,
 
-              passed:
-                false,
+          passed: false,
 
-              status:
-                'FAILED',
+          status: 'FAILED',
 
-              output:
-                '',
+          output: '',
 
-              expectedOutput:
-                testCase.expectedJson !==
-                undefined
-                  ? JSON.stringify(
-                      testCase.expectedJson,
-                    )
-                  : `HTTP ${testCase.expectedStatus}`,
+          expectedOutput:
+            testCase.expectedJson !== undefined
+              ? JSON.stringify(testCase.expectedJson)
+              : `HTTP ${testCase.expectedStatus}`,
 
-              stderr:
-                '',
+          stderr: '',
 
-              message:
-                'FastAPI hidden HTTP test was not executed by the Judge.',
-            }),
-          ),
+          message: 'FastAPI hidden HTTP test was not executed by the Judge.',
+        })),
 
-        buildOutput:
-          judgeResult.output ??
-          '',
+        buildOutput: judgeResult.output ?? '',
 
-        context:
-          body.context,
+        context: body.context,
       };
     }
 
-    const allTestsPassed =
-      totalTests > 0 &&
-      passedTests ===
-        totalTests;
+    const allTestsPassed = totalTests > 0 && passedTests === totalTests;
 
     const score =
-      totalTests > 0
-        ? Math.round(
-            (
-              passedTests /
-              totalTests
-            ) * 100,
-          )
-        : 0;
+      totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
 
     return {
-      problemSlug:
-        body.problemSlug,
+      problemSlug: body.problemSlug,
 
       language,
 
-      runtime:
-        'fastapi',
+      runtime: 'fastapi',
 
-      status:
-        allTestsPassed
-          ? 'ACCEPTED'
-          : 'WRONG_ANSWER',
+      status: allTestsPassed ? 'ACCEPTED' : 'WRONG_ANSWER',
 
       passedTests,
 
@@ -4515,15 +3100,11 @@ export class SubmissionsService {
 
       score,
 
-      results:
-        normalizedResults,
+      results: normalizedResults,
 
-      buildOutput:
-        judgeResult.output ??
-        '',
+      buildOutput: judgeResult.output ?? '',
 
-      context:
-        body.context,
+      context: body.context,
     };
   }
 
@@ -4531,46 +3112,29 @@ export class SubmissionsService {
      SUBMIT
   ======================================================= */
 
-  async submit(
-    body: SubmissionRequest,
-  ) {
+  async submit(body: SubmissionRequest) {
     /* =====================================================
        VALIDATE PROBLEM
     ===================================================== */
 
-    if (
-      !body.problemSlug ||
-      !body.problemSlug.trim()
-    ) {
-      throw new BadRequestException(
-        'Problem slug is required.',
-      );
+    if (!body.problemSlug || !body.problemSlug.trim()) {
+      throw new BadRequestException('Problem slug is required.');
     }
 
     /* =====================================================
        VALIDATE LANGUAGE
     ===================================================== */
 
-    if (
-      !body.language ||
-      !body.language.trim()
-    ) {
-      throw new BadRequestException(
-        'Language is required.',
-      );
+    if (!body.language || !body.language.trim()) {
+      throw new BadRequestException('Language is required.');
     }
 
     /* =====================================================
        VALIDATE CODE
     ===================================================== */
 
-    if (
-      !body.code ||
-      !body.code.trim()
-    ) {
-      throw new BadRequestException(
-        'Code is required.',
-      );
+    if (!body.code || !body.code.trim()) {
+      throw new BadRequestException('Code is required.');
     }
 
     /* =====================================================
@@ -4591,13 +3155,9 @@ export class SubmissionsService {
        NORMALIZE FRAMEWORK TECHNOLOGY
     ===================================================== */
 
-    const normalizedTechnology =
-      String(
-        body.context?.technology ??
-          '',
-      )
-        .trim()
-        .toLowerCase();
+    const normalizedTechnology = String(body.context?.technology ?? '')
+      .trim()
+      .toLowerCase();
 
     /* =====================================================
        FASTAPI FRAMEWORK SUBMISSION
@@ -4607,23 +3167,13 @@ export class SubmissionsService {
     ===================================================== */
 
     const isFastApi =
-      body.problemSlug.startsWith(
-        'fastapi-',
-      ) ||
-      normalizedTechnology ===
-        'fastapi' ||
-      normalizedTechnology ===
-        'fast-api' ||
-      normalizedTechnology ===
-        'fast api';
+      body.problemSlug.startsWith('fastapi-') ||
+      normalizedTechnology === 'fastapi' ||
+      normalizedTechnology === 'fast-api' ||
+      normalizedTechnology === 'fast api';
 
-    if (
-      isFastApi
-    ) {
-      return await this.submitFastApi(
-        body,
-        language,
-      );
+    if (isFastApi) {
+      return await this.submitFastApi(body, language);
     }
 
     /* =====================================================
@@ -4631,28 +3181,15 @@ export class SubmissionsService {
     ===================================================== */
 
     const isAspNetCore =
-      body.problemSlug.startsWith(
-        'aspnetcore-',
-      ) ||
-      body.problemSlug.startsWith(
-        'aspnet-core-',
-      ) ||
-      normalizedTechnology ===
-        'aspnetcore' ||
-      normalizedTechnology ===
-        'asp.netcore' ||
-      normalizedTechnology ===
-        'asp.net-core' ||
-      normalizedTechnology ===
-        'aspnet-core';
+      body.problemSlug.startsWith('aspnetcore-') ||
+      body.problemSlug.startsWith('aspnet-core-') ||
+      normalizedTechnology === 'aspnetcore' ||
+      normalizedTechnology === 'asp.netcore' ||
+      normalizedTechnology === 'asp.net-core' ||
+      normalizedTechnology === 'aspnet-core';
 
-    if (
-      isAspNetCore
-    ) {
-      return this.submitAspNetCore(
-        body,
-        language,
-      );
+    if (isAspNetCore) {
+      return this.submitAspNetCore(body, language);
     }
 
     /* =====================================================
@@ -4661,8 +3198,7 @@ export class SubmissionsService {
 
     if (
       !SUPPORTED_LANGUAGES.includes(
-        language as
-          (typeof SUPPORTED_LANGUAGES)[number],
+        language as (typeof SUPPORTED_LANGUAGES)[number],
       )
     ) {
       throw new BadRequestException(
@@ -4677,15 +3213,8 @@ export class SubmissionsService {
        framework Judge instead of the normal /run endpoint.
     ===================================================== */
 
-    if (
-      body.problemSlug.startsWith(
-        'nextjs-',
-      )
-    ) {
-      return await this.submitNextJs(
-        body,
-        language,
-      );
+    if (body.problemSlug.startsWith('nextjs-')) {
+      return await this.submitNextJs(body, language);
     }
 
     /* =====================================================
@@ -4695,15 +3224,8 @@ export class SubmissionsService {
        instead of the normal stdin/stdout /run endpoint.
     ===================================================== */
 
-    if (
-      body.problemSlug.startsWith(
-        'nestjs-',
-      )
-    ) {
-      return await this.submitNestJs(
-        body,
-        language,
-      );
+    if (body.problemSlug.startsWith('nestjs-')) {
+      return await this.submitNestJs(body, language);
     }
 
     /* =====================================================
@@ -4713,15 +3235,8 @@ export class SubmissionsService {
        instead of the normal Python stdin/stdout /run endpoint.
     ===================================================== */
 
-    if (
-      body.problemSlug.startsWith(
-        'django-',
-      )
-    ) {
-      return await this.submitDjango(
-        body,
-        language,
-      );
+    if (body.problemSlug.startsWith('django-')) {
+      return await this.submitDjango(body, language);
     }
 
     /* =====================================================
@@ -4732,32 +3247,19 @@ export class SubmissionsService {
     ===================================================== */
 
     if (
-      body.problemSlug.startsWith(
-        'springboot-',
-      ) ||
-      body.problemSlug.startsWith(
-        'spring-boot-',
-      )
+      body.problemSlug.startsWith('springboot-') ||
+      body.problemSlug.startsWith('spring-boot-')
     ) {
-      return await this.submitSpringBoot(
-        body,
-        language,
-      );
+      return await this.submitSpringBoot(body, language);
     }
 
     /* =====================================================
        GET HIDDEN TEST CASES
     ===================================================== */
 
-    const testCases =
-      this.getHiddenTests(
-        language,
-        body.problemSlug,
-      );
+    const testCases = this.getHiddenTests(language, body.problemSlug);
 
-    if (
-      testCases.length === 0
-    ) {
+    if (testCases.length === 0) {
       throw new BadRequestException(
         `No hidden test cases configured for ${body.problemSlug}.`,
       );
@@ -4772,15 +3274,10 @@ export class SubmissionsService {
 
     const machineLearningDataset =
       language === 'python-machine-learning'
-        ? getPythonMachineLearningDataset(
-            body.problemSlug,
-          )
+        ? getPythonMachineLearningDataset(body.problemSlug)
         : undefined;
 
-    if (
-      language === 'python-machine-learning' &&
-      !machineLearningDataset
-    ) {
+    if (language === 'python-machine-learning' && !machineLearningDataset) {
       throw new BadRequestException(
         `No Python Machine Learning dataset configured for ${body.problemSlug}.`,
       );
@@ -4812,13 +3309,8 @@ export class SubmissionsService {
        RUN EVERY HIDDEN TEST
     ===================================================== */
 
-    for (
-      let index = 0;
-      index < testCases.length;
-      index += 1
-    ) {
-      const testCase =
-        testCases[index];
+    for (let index = 0; index < testCases.length; index += 1) {
+      const testCase = testCases[index];
 
       /* ===================================================
          TYPESCRIPT SOURCE REQUIREMENTS
@@ -4835,36 +3327,26 @@ export class SubmissionsService {
          submitDjango() and do not enter this stdin/stdout loop.
       =================================================== */
 
-      const sourceValidationMessage =
-        this.validateSourceRequirements(
-          body.code,
-          testCase,
-        );
+      const sourceValidationMessage = this.validateSourceRequirements(
+        body.code,
+        testCase,
+      );
 
-      if (
-        sourceValidationMessage
-      ) {
+      if (sourceValidationMessage) {
         results.push({
-          testNumber:
-            index + 1,
+          testNumber: index + 1,
 
-          passed:
-            false,
+          passed: false,
 
-          status:
-            'SOURCE_VALIDATION_FAILED',
+          status: 'SOURCE_VALIDATION_FAILED',
 
-          output:
-            '',
+          output: '',
 
-          expectedOutput:
-            '',
+          expectedOutput: '',
 
-          stderr:
-            '',
+          stderr: '',
 
-          message:
-            sourceValidationMessage,
+          message: sourceValidationMessage,
         });
 
         continue;
@@ -4873,66 +3355,45 @@ export class SubmissionsService {
       let response: Response;
 
       try {
-        response =
-          await fetch(
-            `${this.judgeUrl}/run`,
-            {
-              method:
-                'POST',
+        response = await fetch(`${this.judgeUrl}/run`, {
+          method: 'POST',
 
-              headers: {
-                'Content-Type':
-                  'application/json',
-              },
+          headers: {
+            'Content-Type': 'application/json',
+          },
 
-              body:
-                JSON.stringify({
-                  language,
+          body: JSON.stringify({
+            language,
 
-                  code:
-                    body.code,
+            code: body.code,
 
-                  input:
-                    testCase.input,
+            input: testCase.input,
 
-                  problemSlug:
-                    body.problemSlug,
+            problemSlug: body.problemSlug,
 
-                  ...(machineLearningDataset
-                    ? {
-                        dataset:
-                          machineLearningDataset.content,
+            ...(machineLearningDataset
+              ? {
+                  dataset: machineLearningDataset.content,
 
-                        datasetFileName:
-                          machineLearningDataset.fileName,
-                      }
-                    : {}),
-                }),
-            },
-          );
-      } catch (
-        error
-      ) {
-        console.error(
-          'Unable to connect to judge:',
-          error,
-        );
+                  datasetFileName: machineLearningDataset.fileName,
+                }
+              : {}),
+          }),
+        });
+      } catch (error) {
+        console.error('Unable to connect to judge:', error);
 
-        throw new BadGatewayException(
-          'Unable to connect to the code judge.',
-        );
+        throw new BadGatewayException('Unable to connect to the code judge.');
       }
 
       /* ===================================================
          PARSE JUDGE RESPONSE
       =================================================== */
 
-      let judgeResult:
-        JudgeResponse;
+      let judgeResult: JudgeResponse;
 
       try {
-        judgeResult =
-          (await response.json()) as JudgeResponse;
+        judgeResult = (await response.json()) as JudgeResponse;
       } catch {
         throw new BadGatewayException(
           'Invalid response received from code judge.',
@@ -4943,12 +3404,9 @@ export class SubmissionsService {
          JUDGE HTTP ERROR
       =================================================== */
 
-      if (
-        !response.ok
-      ) {
+      if (!response.ok) {
         throw new BadGatewayException(
-          judgeResult.message ??
-            'Judge rejected the submission.',
+          judgeResult.message ?? 'Judge rejected the submission.',
         );
       }
 
@@ -4956,13 +3414,9 @@ export class SubmissionsService {
          UNSUPPORTED LANGUAGE
       =================================================== */
 
-      if (
-        judgeResult.status ===
-        'UNSUPPORTED_LANGUAGE'
-      ) {
+      if (judgeResult.status === 'UNSUPPORTED_LANGUAGE') {
         throw new BadGatewayException(
-          judgeResult.message ??
-            `Judge does not support ${language}.`,
+          judgeResult.message ?? `Judge does not support ${language}.`,
         );
       }
 
@@ -4970,13 +3424,9 @@ export class SubmissionsService {
          INVALID REQUEST
       =================================================== */
 
-      if (
-        judgeResult.status ===
-        'INVALID_REQUEST'
-      ) {
+      if (judgeResult.status === 'INVALID_REQUEST') {
         throw new BadGatewayException(
-          judgeResult.message ??
-            'Judge rejected the execution request.',
+          judgeResult.message ?? 'Judge rejected the execution request.',
         );
       }
 
@@ -4984,13 +3434,9 @@ export class SubmissionsService {
          INTERNAL JUDGE ERROR
       =================================================== */
 
-      if (
-        judgeResult.status ===
-        'INTERNAL_ERROR'
-      ) {
+      if (judgeResult.status === 'INTERNAL_ERROR') {
         throw new BadGatewayException(
-          judgeResult.message ??
-            'Internal judge error.',
+          judgeResult.message ?? 'Internal judge error.',
         );
       }
 
@@ -5013,54 +3459,37 @@ export class SubmissionsService {
            → swiftc compilation failure
       =================================================== */
 
-      if (
-        judgeResult.status ===
-        'COMPILATION_ERROR'
-      ) {
+      if (judgeResult.status === 'COMPILATION_ERROR') {
         return {
-          problemSlug:
-            body.problemSlug,
+          problemSlug: body.problemSlug,
 
           language,
 
-          status:
-            'COMPILATION_ERROR',
+          status: 'COMPILATION_ERROR',
 
-          passedTests:
-            0,
+          passedTests: 0,
 
-          totalTests:
-            testCases.length,
+          totalTests: testCases.length,
 
-          score:
-            0,
+          score: 0,
 
           results: [
             {
-              testNumber:
-                1,
+              testNumber: 1,
 
-              passed:
-                false,
+              passed: false,
 
-              status:
-                'COMPILATION_ERROR',
+              status: 'COMPILATION_ERROR',
 
-              output:
-                judgeResult.output ??
-                '',
+              output: judgeResult.output ?? '',
 
-              expectedOutput:
-                '',
+              expectedOutput: '',
 
-              stderr:
-                judgeResult.stderr ??
-                '',
+              stderr: judgeResult.stderr ?? '',
             },
           ],
 
-          context:
-            body.context,
+          context: body.context,
         };
       }
 
@@ -5068,60 +3497,39 @@ export class SubmissionsService {
          TIME LIMIT
       =================================================== */
 
-      if (
-        judgeResult.status ===
-        'TIME_LIMIT_EXCEEDED'
-      ) {
+      if (judgeResult.status === 'TIME_LIMIT_EXCEEDED') {
         return {
-          problemSlug:
-            body.problemSlug,
+          problemSlug: body.problemSlug,
 
           language,
 
-          status:
-            'TIME_LIMIT_EXCEEDED',
+          status: 'TIME_LIMIT_EXCEEDED',
 
           passedTests,
 
-          totalTests:
-            testCases.length,
+          totalTests: testCases.length,
 
-          score:
-            Math.round(
-              (
-                passedTests /
-                testCases.length
-              ) * 100,
-            ),
+          score: Math.round((passedTests / testCases.length) * 100),
 
           results: [
             ...results,
 
             {
-              testNumber:
-                index + 1,
+              testNumber: index + 1,
 
-              passed:
-                false,
+              passed: false,
 
-              status:
-                'TIME_LIMIT_EXCEEDED',
+              status: 'TIME_LIMIT_EXCEEDED',
 
-              output:
-                judgeResult.output ??
-                '',
+              output: judgeResult.output ?? '',
 
-              expectedOutput:
-                testCase.expectedOutput,
+              expectedOutput: testCase.expectedOutput,
 
-              stderr:
-                judgeResult.stderr ??
-                '',
+              stderr: judgeResult.stderr ?? '',
             },
           ],
 
-          context:
-            body.context,
+          context: body.context,
         };
       }
 
@@ -5129,60 +3537,39 @@ export class SubmissionsService {
          RUNTIME ERROR
       =================================================== */
 
-      if (
-        judgeResult.status ===
-        'RUNTIME_ERROR'
-      ) {
+      if (judgeResult.status === 'RUNTIME_ERROR') {
         return {
-          problemSlug:
-            body.problemSlug,
+          problemSlug: body.problemSlug,
 
           language,
 
-          status:
-            'RUNTIME_ERROR',
+          status: 'RUNTIME_ERROR',
 
           passedTests,
 
-          totalTests:
-            testCases.length,
+          totalTests: testCases.length,
 
-          score:
-            Math.round(
-              (
-                passedTests /
-                testCases.length
-              ) * 100,
-            ),
+          score: Math.round((passedTests / testCases.length) * 100),
 
           results: [
             ...results,
 
             {
-              testNumber:
-                index + 1,
+              testNumber: index + 1,
 
-              passed:
-                false,
+              passed: false,
 
-              status:
-                'RUNTIME_ERROR',
+              status: 'RUNTIME_ERROR',
 
-              output:
-                judgeResult.output ??
-                '',
+              output: judgeResult.output ?? '',
 
-              expectedOutput:
-                testCase.expectedOutput,
+              expectedOutput: testCase.expectedOutput,
 
-              stderr:
-                judgeResult.stderr ??
-                '',
+              stderr: judgeResult.stderr ?? '',
             },
           ],
 
-          context:
-            body.context,
+          context: body.context,
         };
       }
 
@@ -5190,48 +3577,29 @@ export class SubmissionsService {
          COMPARE OUTPUT
       =================================================== */
 
-      const actualOutput =
-        this.normalizeOutput(
-          judgeResult.output ??
-            '',
-        );
+      const actualOutput = this.normalizeOutput(judgeResult.output ?? '');
 
-      const expectedOutput =
-        this.normalizeOutput(
-          testCase.expectedOutput,
-        );
+      const expectedOutput = this.normalizeOutput(testCase.expectedOutput);
 
       const passed =
-        judgeResult.status ===
-          'SUCCESS' &&
-        actualOutput ===
-          expectedOutput;
+        judgeResult.status === 'SUCCESS' && actualOutput === expectedOutput;
 
-      if (
-        passed
-      ) {
+      if (passed) {
         passedTests += 1;
       }
 
       results.push({
-        testNumber:
-          index + 1,
+        testNumber: index + 1,
 
         passed,
 
-        status:
-          passed
-            ? 'PASSED'
-            : 'FAILED',
+        status: passed ? 'PASSED' : 'FAILED',
 
-        output:
-          actualOutput,
+        output: actualOutput,
 
         expectedOutput,
 
-        stderr:
-          judgeResult.stderr ??
-          '',
+        stderr: judgeResult.stderr ?? '',
       });
     }
 
@@ -5239,34 +3607,19 @@ export class SubmissionsService {
        FINAL SUBMISSION RESULT
     ===================================================== */
 
-    const totalTests =
-      testCases.length;
+    const totalTests = testCases.length;
 
-    const allTestsPassed =
-      totalTests > 0 &&
-      passedTests ===
-        totalTests;
+    const allTestsPassed = totalTests > 0 && passedTests === totalTests;
 
     const score =
-      totalTests > 0
-        ? Math.round(
-            (
-              passedTests /
-              totalTests
-            ) * 100,
-          )
-        : 0;
+      totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
 
     return {
-      problemSlug:
-        body.problemSlug,
+      problemSlug: body.problemSlug,
 
       language,
 
-      status:
-        allTestsPassed
-          ? 'ACCEPTED'
-          : 'WRONG_ANSWER',
+      status: allTestsPassed ? 'ACCEPTED' : 'WRONG_ANSWER',
 
       passedTests,
 
@@ -5276,8 +3629,22 @@ export class SubmissionsService {
 
       results,
 
-      context:
-        body.context,
+      context: body.context,
     };
+  }
+
+  async rejudge(
+    _run: {
+      id: string;
+      userId: string | null;
+      problemSlug: string;
+      language: string;
+      code: string;
+    },
+    _rejudgeJobId: string,
+  ): Promise<RunRecord> {
+    throw new ServiceUnavailableException(
+      'Rejudge is unavailable until the judge integration is wired.',
+    );
   }
 }
