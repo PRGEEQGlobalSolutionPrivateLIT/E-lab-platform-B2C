@@ -140,6 +140,8 @@ type FrameworkExecutionResponse = {
 type SubmissionTestResult = {
   testNumber: number;
 
+  message?: string;
+
   status: string;
 
   passed?: boolean;
@@ -1742,13 +1744,13 @@ export default function CodingWorkspacePage() {
          endpoint.
       =============================================== */
 
-    if (isWebWorkspace) {
-      setOutput(["Web Submission Not Connected Yet", "", "Your HTML/CSS files are being preserved correctly.", "Web submission tests will be connected after preview and the Web Judge are ready."].join("\n"));
+    if (isWebWorkspace && !workspaceFiles.some((file) => file.content.trim().length > 0)) {
+      setOutput("Please enter HTML or CSS before submitting.");
 
       return;
     }
 
-    if (!code.trim()) {
+    if (!isWebWorkspace && !code.trim()) {
       setOutput("Please enter code before submitting.");
 
       return;
@@ -1756,7 +1758,7 @@ export default function CodingWorkspacePage() {
 
     setIsSubmitting(true);
 
-    setOutput(isReactWorkspace ? "Submitting React solution and running hidden component tests..." : isVueWorkspace ? "Submitting Vue solution and running hidden component tests..." : isAngularWorkspace ? "Submitting Angular solution and running hidden component tests..." : isExpressWorkspace ? "Submitting Express.js solution and running hidden HTTP tests..." : isNextJsWorkspace ? "Submitting Next.js solution and running hidden tests..." : isNestJsWorkspace ? "Submitting NestJS solution and running hidden tests..." : isDjangoWorkspace ? "Submitting Django solution and running hidden tests..." : isFastApiWorkspace ? "Submitting FastAPI solution and running hidden tests..." : isSpringBootWorkspace ? "Submitting Spring Boot solution and running hidden tests..." : isAspNetCoreWorkspace ? "Submitting ASP.NET Core solution and running hidden tests..." : "Submitting solution and running hidden test cases...");
+    setOutput(isWebWorkspace ? "Submitting HTML/CSS and running page checks..." : isReactWorkspace ? "Submitting React solution and running hidden component tests..." : isVueWorkspace ? "Submitting Vue solution and running hidden component tests..." : isAngularWorkspace ? "Submitting Angular solution and running hidden component tests..." : isExpressWorkspace ? "Submitting Express.js solution and running hidden HTTP tests..." : isNextJsWorkspace ? "Submitting Next.js solution and running hidden tests..." : isNestJsWorkspace ? "Submitting NestJS solution and running hidden tests..." : isDjangoWorkspace ? "Submitting Django solution and running hidden tests..." : isFastApiWorkspace ? "Submitting FastAPI solution and running hidden tests..." : isSpringBootWorkspace ? "Submitting Spring Boot solution and running hidden tests..." : isAspNetCoreWorkspace ? "Submitting ASP.NET Core solution and running hidden tests..." : "Submitting solution and running hidden test cases...");
 
     try {
       /* ===================================================
@@ -1774,12 +1776,14 @@ export default function CodingWorkspacePage() {
            hidden-test routing.
         =================================================== */
 
-      if (isFrameworkWorkspace && !isNextJsWorkspace && !isNestJsWorkspace && !isDjangoWorkspace && !isFastApiWorkspace && !isSpringBootWorkspace && !isAspNetCoreWorkspace) {
+      if (isWebWorkspace || (isFrameworkWorkspace && !isNextJsWorkspace && !isNestJsWorkspace && !isDjangoWorkspace && !isFastApiWorkspace && !isSpringBootWorkspace && !isAspNetCoreWorkspace)) {
         /* ===============================================
              RUNTIME
           =============================================== */
 
-        if (!frameworkRuntime) {
+        const submissionRuntime = isWebWorkspace ? "web" : frameworkRuntime;
+
+        if (!submissionRuntime) {
           setOutput(["Framework Submission Error", "", `No framework runtime is configured for ${problem.technologySlug}.`].join("\n"));
 
           return;
@@ -1789,7 +1793,7 @@ export default function CodingWorkspacePage() {
              FILES
           =============================================== */
 
-        const files = buildFrameworkFiles();
+        const files = isWebWorkspace ? workspaceFiles.map((file) => ({ path: file.path, language: file.language, content: file.content })) : buildFrameworkFiles();
 
         if (files.length === 0) {
           setOutput(["Framework Submission Error", "", "No framework files are configured for this problem."].join("\n"));
@@ -1811,7 +1815,7 @@ export default function CodingWorkspacePage() {
           body: JSON.stringify({
             problemSlug: problem.slug,
 
-            runtime: frameworkRuntime,
+            runtime: submissionRuntime,
 
             files,
 
@@ -1841,7 +1845,7 @@ export default function CodingWorkspacePage() {
 
         const score = data.score ?? 0;
 
-        const testResults = Array.isArray(data.results) ? data.results.map((result) => `Test ${result.testNumber}: ${result.status}`).join("\n") : "";
+        const testResults = Array.isArray(data.results) ? data.results.map((result) => `Test ${result.testNumber}: ${result.status}${isWebWorkspace && result.message ? ` - ${result.message}` : ""}`).join("\n") : "";
 
         /* ===============================================
              SOLVED CONDITION

@@ -4,7 +4,7 @@ export type CheckStatus = 'pass' | 'fail';
 
 export type TestKind = 'io' | 'framework' | 'lab';
 
-export type FrameworkRuntime = 'express' | 'fastapi' | 'springboot' | 'aspnetcore' | 'react' | 'angular' | 'vue' | 'nextjs' | 'nestjs' | 'django' | 'database' | 'shell' | 'powerbi';
+export type FrameworkRuntime = 'express' | 'fastapi' | 'springboot' | 'aspnetcore' | 'react' | 'angular' | 'vue' | 'nextjs' | 'nestjs' | 'django' | 'database' | 'shell' | 'powerbi' | 'web';
 
 export type FrameworkSpec = Record<string, unknown>;
 

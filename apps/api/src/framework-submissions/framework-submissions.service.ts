@@ -4,6 +4,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { LearnerCatalogService } from '../learner/learner-catalog.service.js';
+import { evaluateWebChecks, type WebCheck } from './web-checks.js';
 
 /* =========================================================
 
@@ -123,7 +124,13 @@ type FrameworkJudgeResponse = {
    - Angular
 \========================================================= */
 
-const SUPPORTED_RUNTIMES = ['express', 'react', 'vue', 'angular'] as const;
+const SUPPORTED_RUNTIMES = [
+  'express',
+  'react',
+  'vue',
+  'angular',
+  'web',
+] as const;
 type SupportedFrameworkRuntime = (typeof SUPPORTED_RUNTIMES)[number];
 /* =========================================================
    SERVICE
@@ -152,12 +159,7 @@ export class FrameworkSubmissionsService {
     if (typeof filePath !== 'string') {
       throw new BadRequestException('Framework file path is required.');
     }
-    const normalized = filePath
-      .replace(
-        /\\/g,
-        '/',
-      )
-      .trim();
+    const normalized = filePath.replace(/\\/g, '/').trim();
     if (
       !normalized ||
       normalized.startsWith('/') ||
@@ -446,11 +448,7 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
-          const tests = await this.getHiddenTests(
-        runtime,
-        problemSlug,
-        userId,
-      );
+    const tests = await this.getHiddenTests(runtime, problemSlug, userId);
 
     if (tests.length === 0) {
       throw new BadRequestException(
@@ -458,16 +456,44 @@ export class FrameworkSubmissionsService {
       );
     }
 
+    if (runtime === 'web') {
+      const webResults = evaluateWebChecks(
+        files,
+        tests as unknown as WebCheck[],
+      );
+      const webPassed = webResults.filter((result) => result.passed).length;
+      const webAccepted =
+        webResults.length > 0 && webPassed === webResults.length;
+      return {
+        problemSlug,
+        runtime,
+        status: webAccepted ? 'ACCEPTED' : 'WRONG_ANSWER',
+        passedTests: webPassed,
+        totalTests: webResults.length,
+        score:
+          webResults.length > 0
+            ? Math.round((webPassed / webResults.length) * 100)
+            : 0,
+        results: webResults.map((result, index) =>
+          this.formatResult(result, index),
+        ),
+        output: webResults
+          .map(
+            (result) => `${result.passed ? 'PASS' : 'FAIL'}  ${result.message}`,
+          )
+          .join('\n'),
+        stderr: '',
+        message: webAccepted
+          ? 'All page checks passed.'
+          : `${webResults.length - webPassed} page check(s) failed.`,
+        context: body.context ?? null,
+      };
+    }
+
     /* =====================================================
 
        CALL JUDGE
-
-
-
        Express, React, Vue and Angular use:
-
-
-
        POST /run/framework
 
     ===================================================== */
@@ -487,9 +513,7 @@ export class FrameworkSubmissionsService {
 
           body: JSON.stringify({
             problemSlug,
-
             runtime,
-
             files,
 
             /*
@@ -515,11 +539,7 @@ export class FrameworkSubmissionsService {
         },
       );
     } catch (error) {
-      console.error(
-        'Unable to connect to framework judge:',
-
-        error,
-      );
+      console.error('Unable to connect to framework judge:', error);
 
       throw new BadGatewayException(
         'Unable to connect to the framework judge.',

@@ -25,7 +25,7 @@ export function JudgeHeader({ subtitle, paused, onReset, children }: JudgeHeader
         <div className={styles.headerActions}>
           <button type="button" className={styles.ghostButton} onClick={onReset}>
             <RotateCcw width={16} height={16} aria-hidden="true" />
-            Reset demo data
+            Refresh
           </button>
           {children}
         </div>

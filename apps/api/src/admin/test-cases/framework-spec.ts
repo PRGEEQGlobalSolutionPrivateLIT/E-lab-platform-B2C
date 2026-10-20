@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 
 import { normalizeLabCheck } from '../../labs/lab-checks.js';
+import { normalizeWebCheck } from '../../framework-submissions/web-checks.js';
 
 export type FrameworkRuntime =
   | 'express'
@@ -15,7 +16,8 @@ export type FrameworkRuntime =
   | 'django'
   | 'database'
   | 'shell'
-  | 'powerbi';
+  | 'powerbi'
+  | 'web';
 
 const LAB_RUNTIME_BY_WORKSPACE: Record<string, FrameworkRuntime> = {
   database: 'database',
@@ -80,6 +82,7 @@ const RUNTIME_BY_TECHNOLOGY: Record<string, FrameworkRuntime> = {
   nextjs: 'nextjs',
   nestjs: 'nestjs',
   django: 'django',
+  'html-css': 'web',
 };
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
@@ -204,6 +207,27 @@ function domStep(spec: Spec) {
   return fail('"type" must be text, click or input.');
 }
 
+function supportFiles(spec: Spec) {
+  const value = spec.supportFiles;
+  if (value === undefined || value === null) return undefined;
+  if (!Array.isArray(value)) fail('"supportFiles" must be a list.');
+  return value.map((item, index) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) fail(`supportFiles[${index}] must be an object.`);
+    const file = item as Spec;
+    const path = text(file, 'path', true, 300)!;
+    if (path.startsWith('/') || path.split(/[\\/]/).includes('..')) fail(`supportFiles[${index}].path must be a relative path inside the project.`);
+    return { path, content: text(file, 'content', true, 100000)! };
+  });
+}
+
+function webCheck(spec: Spec): Spec {
+  try {
+    return normalizeWebCheck(spec) as unknown as Spec;
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : 'invalid web check.');
+  }
+}
+
 const defined = (spec: Spec) => Object.fromEntries(Object.entries(spec).filter(([, value]) => value !== undefined));
 
 export function normalizeFrameworkSpec(runtime: FrameworkRuntime, input: unknown): Spec {
@@ -233,7 +257,10 @@ export function normalizeFrameworkSpec(runtime: FrameworkRuntime, input: unknown
         body: text(spec, 'body', false),
         expectedStatus: status(spec, false),
         expectedOutput: text(spec, 'expectedOutput', false),
+        supportFiles: supportFiles(spec),
       });
+    case 'web':
+      return webCheck(spec);
     case 'aspnetcore': {
       const headers = spec.headers;
       if (headers !== undefined && (typeof headers !== 'object' || headers === null || Array.isArray(headers) || Object.values(headers).some((value) => typeof value !== 'string'))) {

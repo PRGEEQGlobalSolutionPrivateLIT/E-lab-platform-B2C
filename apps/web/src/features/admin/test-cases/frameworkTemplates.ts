@@ -61,6 +61,12 @@ export const FRAMEWORK_GUIDES: Record<FrameworkRuntime, RuntimeGuide> = {
       hint: 'Rename the imported table according to the problem statement.',
     },
   },
+  web: {
+    label: 'HTML & CSS',
+    kind: 'Page check',
+    help: 'name and type are required. element counts nodes matching selector (min, max). text needs selector and a pattern regex matched against the text. labels requires every form control to have a label. headings requires one h1 and no skipped levels. css needs selector and property (regex) with optional value (regex), media (true = only inside @media, false = only outside) and absent (pass when no rule matches). media requires an @media rule (feature regex, default (max|min)-width). any and all combine nested checks.',
+    template: { name: 'Card has rounded corners', type: 'css', selector: '.card', property: 'border-radius', value: '[1-9]' },
+  },
   express: {
     label: 'Express',
     kind: 'HTTP request',
@@ -76,7 +82,7 @@ export const FRAMEWORK_GUIDES: Record<FrameworkRuntime, RuntimeGuide> = {
   springboot: {
     label: 'Spring Boot',
     kind: 'HTTP request',
-    help: 'method and path are required. body is sent as text. expectedStatus defaults to 200. expectedOutput must match the trimmed response body exactly.',
+    help: 'method and path are required. body is sent as text. expectedStatus defaults to 200. expectedOutput must match the trimmed response body exactly. supportFiles is an optional list of { path, content } files (for example a probe controller) added to the learner project before it is built.',
     template: { method: 'GET', path: '/hello', expectedStatus: 200, expectedOutput: 'Hello, World!' },
   },
   aspnetcore: {
@@ -137,7 +143,7 @@ export function summarizeSpec(runtime: FrameworkRuntime, spec: FrameworkSpec): s
     return `Shows "${str(spec.text)}"`;
   }
   if (kind === 'Rendered output') return str(spec.title) || `Renders "${str(spec.expectedOutput)}"`;
-  if (kind === 'Lab check') return str(spec.name);
+  if (kind === 'Lab check' || kind === 'Page check') return str(spec.name);
   if (kind === 'Power BI rule') return str(spec.label) || str(spec.id);
   return str(spec.title) || str(spec.id);
 }

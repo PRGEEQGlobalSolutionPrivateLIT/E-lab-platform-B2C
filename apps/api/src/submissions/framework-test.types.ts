@@ -25,6 +25,7 @@ export type SpringBootHiddenTestCase = {
   body?: string;
   expectedStatus?: number;
   expectedOutput?: string;
+  supportFiles?: { path: string; content: string }[];
 };
 
 export type AspNetCoreHiddenTestCase = {
