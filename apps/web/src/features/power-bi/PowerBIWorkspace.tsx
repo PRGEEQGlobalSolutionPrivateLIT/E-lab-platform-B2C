@@ -2,6 +2,7 @@
 
 
 
+import { apiFetch } from '@/features/auth/apiFetch';
 import './PowerBIWorkspace.css';
 
 
@@ -877,7 +878,7 @@ export default function PowerBIWorkspace({
       return storedAttemptId;
     }
 
-    const response = await fetch(`${POWER_BI_API_BASE}/power-bi-lab/attempts`, {
+    const response = await apiFetch(`${POWER_BI_API_BASE}/power-bi-lab/attempts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ problemSlug }),
@@ -1971,7 +1972,7 @@ export default function PowerBIWorkspace({
 
     try {
       const currentAttemptId = await ensureAttemptId();
-      const response = await fetch(
+      const response = await apiFetch(
         `${POWER_BI_API_BASE}/power-bi-lab/attempts/${currentAttemptId}/check`,
         {
           method: 'POST',
@@ -2015,7 +2016,7 @@ export default function PowerBIWorkspace({
 
     try {
       const currentAttemptId = await ensureAttemptId();
-      const response = await fetch(
+      const response = await apiFetch(
         `${POWER_BI_API_BASE}/power-bi-lab/attempts/${currentAttemptId}/save`,
         {
           method: 'POST',
@@ -2057,7 +2058,7 @@ export default function PowerBIWorkspace({
 
     try {
       const currentAttemptId = await ensureAttemptId();
-      const response = await fetch(
+      const response = await apiFetch(
         `${POWER_BI_API_BASE}/power-bi-lab/attempts/${currentAttemptId}/submit`,
         {
           method: 'POST',

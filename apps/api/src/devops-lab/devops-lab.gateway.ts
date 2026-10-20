@@ -23,7 +23,11 @@ import {
 
   Logger,
 
+  UseGuards,
+
 } from '@nestjs/common';
+
+import { LabSocketGuard } from '../labs/lab-socket.guard.js';
 
 
 
@@ -88,29 +92,17 @@ type TerminalSessionPayload = {
 
 
 @WebSocketGateway({
-
   namespace: '/devops-terminal',
-
-
-
   cors: {
-
     origin: [
-
+      ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL.replace(/\/+$/, '')] : []),
       'http://localhost:3000',
-
       'http://127.0.0.1:3000',
-
     ],
-
-
-
     credentials: true,
-
   },
-
 })
-
+@UseGuards(LabSocketGuard)
 export class DevOpsLabGateway
 
   implements

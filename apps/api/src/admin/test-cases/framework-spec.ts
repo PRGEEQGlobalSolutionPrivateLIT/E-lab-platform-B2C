@@ -1,5 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 
+import { normalizeLabCheck } from '../../labs/lab-checks.js';
+
 export type FrameworkRuntime =
   | 'express'
   | 'fastapi'
@@ -10,7 +12,61 @@ export type FrameworkRuntime =
   | 'vue'
   | 'nextjs'
   | 'nestjs'
-  | 'django';
+  | 'django'
+  | 'database'
+  | 'shell'
+  | 'powerbi';
+
+const LAB_RUNTIME_BY_WORKSPACE: Record<string, FrameworkRuntime> = {
+  database: 'database',
+  devops: 'shell',
+  powerbi: 'powerbi',
+};
+
+const DEVOPS_LAB_PREFIXES = [
+  'linux-',
+  'git-',
+  'docker-',
+  'kubernetes-',
+  'cicd-',
+  'web-security-',
+  'network-security-',
+  'python-security-',
+  'incident-response-',
+  'devsecops-',
+  'penetration-testing-',
+  'cloud-security-',
+  'digital-forensics-',
+  'soc-siem-',
+  'ethereum-solidity-',
+  'web3-dapp-development-',
+  'smart-contract-security-',
+  'defi-tokenization-',
+];
+
+const POWER_BI_RULE_TYPES = [
+  'dataset-selected',
+  'dataset-loaded',
+  'table-name',
+  'required-columns',
+  'minimum-rows',
+  'transform',
+  'relationship',
+  'visual',
+  'filter',
+  'dax-measure',
+  'table-exists',
+  'column-exists',
+  'column-removed',
+  'column-renamed',
+  'transform-applied',
+  'relationship-exists',
+  'measure-exists',
+  'dax-expression',
+  'visual-exists',
+  'visual-field',
+  'filter-exists',
+];
 
 const RUNTIME_BY_TECHNOLOGY: Record<string, FrameworkRuntime> = {
   expressjs: 'express',
@@ -31,8 +87,42 @@ const FLAGS = /^[dgimsuy]*$/;
 
 type Spec = Record<string, unknown>;
 
-export function frameworkRuntime(technologySlug: string): FrameworkRuntime | null {
+export function frameworkRuntime(technologySlug: string, workspaceType?: string | null, problemSlug?: string | null): FrameworkRuntime | null {
+  const lab = workspaceType ? LAB_RUNTIME_BY_WORKSPACE[workspaceType.trim().toLowerCase()] : undefined;
+  if (lab) return lab;
+  const slug = (problemSlug ?? '').trim().toLowerCase();
+  if (slug && DEVOPS_LAB_PREFIXES.some((prefix) => slug.startsWith(prefix))) return 'shell';
   return RUNTIME_BY_TECHNOLOGY[technologySlug.trim().toLowerCase()] ?? null;
+}
+
+export function testKindFor(runtime: FrameworkRuntime): 'framework' | 'lab' {
+  return runtime === 'database' || runtime === 'shell' || runtime === 'powerbi' ? 'lab' : 'framework';
+}
+
+function failRule(message: string): never {
+  throw new BadRequestException(`Invalid Power BI rule: ${message}`);
+}
+
+function powerBiRule(spec: Spec) {
+  const id = text(spec, 'id', true, 100)!;
+  const type = text(spec, 'type', true, 40)!;
+  if (!POWER_BI_RULE_TYPES.includes(type)) failRule(`"type" must be one of ${POWER_BI_RULE_TYPES.join(', ')}.`);
+  const label = text(spec, 'label', true, 200)!;
+  const points = spec.points;
+  if (typeof points !== 'number' || !Number.isFinite(points) || points < 0 || points > 1000) failRule('"points" must be a number between 0 and 1000.');
+  if (spec.required !== undefined && typeof spec.required !== 'boolean') failRule('"required" must be true or false.');
+  for (const key of ['columns', 'requiredColumns']) {
+    const list = spec[key];
+    if (list !== undefined && (!Array.isArray(list) || list.some((item) => typeof item !== 'string'))) failRule(`"${key}" must be a list of text values.`);
+  }
+  for (const key of ['minimum', 'minimumRows']) {
+    if (spec[key] !== undefined && typeof spec[key] !== 'number') failRule(`"${key}" must be a number.`);
+  }
+  for (const [key, value] of Object.entries(spec)) {
+    if (['columns', 'requiredColumns', 'minimum', 'minimumRows', 'points', 'required', 'active'].includes(key)) continue;
+    if (value !== undefined && value !== null && typeof value !== 'string') failRule(`"${key}" must be text.`);
+  }
+  return { ...spec, id, type, label, points };
 }
 
 function fail(message: string): never {
@@ -121,6 +211,11 @@ export function normalizeFrameworkSpec(runtime: FrameworkRuntime, input: unknown
   const spec = input as Spec;
 
   switch (runtime) {
+    case 'database':
+    case 'shell':
+      return normalizeLabCheck(spec) as Spec;
+    case 'powerbi':
+      return powerBiRule(spec);
     case 'express':
       return defined({ ...request(spec), expectedStatus: status(spec, true), body: spec.body, expectedBody: spec.expectedBody });
     case 'fastapi':

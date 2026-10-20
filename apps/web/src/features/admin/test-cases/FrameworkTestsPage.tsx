@@ -37,7 +37,7 @@ export function FrameworkTestsPage() {
   const selected = filtered.find((problem) => problem.id === problemId) ?? filtered[0] ?? null;
   const runtime = selected?.frameworkRuntime ?? null;
   const { tests: allTests, loading, loadError: testsError, needsReason, addTest, updateTest, removeTest } = useProblemTests(selected?.id ?? null);
-  const tests = allTests.filter((test) => test.kind === 'framework');
+  const tests = allTests.filter((test) => test.kind === 'framework' || test.kind === 'lab');
   const allRevealed = tests.length > 0 && tests.every((test) => revealed.has(test.id));
 
   const selectProblem = (id: string) => {
@@ -66,10 +66,10 @@ export function FrameworkTestsPage() {
     if (!selected || !modal) return 'Choose a problem first.';
     const result = modal.test
       ? await updateTest(modal.test.id, { spec }, changeReason)
-      : await addTest({ kind: 'framework', spec, hidden: true }, changeReason);
+      : await addTest({ kind: selected.testKind === 'lab' ? 'lab' : 'framework', spec, hidden: true }, changeReason);
     if (!result.ok) return result.error;
     setModal(null);
-    setNotice({ tone: 'ok', text: modal.test ? 'Test saved.' : 'Added a framework test.' });
+    setNotice({ tone: 'ok', text: modal.test ? 'Test saved.' : selected.testKind === 'lab' ? 'Added a lab check.' : 'Added a framework test.' });
     void refreshCoverage();
     return null;
   };
@@ -109,8 +109,8 @@ export function FrameworkTestsPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div className={styles.headerText}>
-          <h1 className={styles.title}>Framework Tests</h1>
-          <p className={styles.subtitle}>HTTP, UI and source-check tests that judge framework submissions. Never shown to learners.</p>
+          <h1 className={styles.title}>Framework &amp; Lab Tests</h1>
+          <p className={styles.subtitle}>Framework tests and database, DevOps and Power BI lab checks that judge submissions. Never shown to learners.</p>
         </div>
       </header>
 
@@ -160,7 +160,7 @@ export function FrameworkTestsPage() {
         </section>
       ) : !selected || !runtime ? (
         <section className={styles.card}>
-          <p className={styles.empty}>{frameworkProblems.length === 0 ? (problems.length === 0 ? scope.empty : 'No framework problems yet.') : 'No problems found for this technology.'}</p>
+          <p className={styles.empty}>{frameworkProblems.length === 0 ? (problems.length === 0 ? scope.empty : 'No framework or lab problems yet.') : 'No problems found for this technology.'}</p>
         </section>
       ) : (
         <section className={styles.card} aria-labelledby="ft-card-title">
@@ -195,7 +195,7 @@ export function FrameworkTestsPage() {
           ) : testsError ? (
             <p className={styles.empty}>{testsError}</p>
           ) : tests.length === 0 ? (
-            <p className={styles.empty}>No framework tests yet. Submissions for this problem cannot be judged without them.</p>
+            <p className={styles.empty}>No tests yet. Submissions for this problem cannot be judged without them.</p>
           ) : (
             <div className={styles.tableWrap}>
               <table className={styles.table}>

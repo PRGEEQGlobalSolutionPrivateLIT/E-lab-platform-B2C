@@ -59,13 +59,13 @@ function testRows(problem) {
   ].map((test, position) => ({ ...test, position, kind: 'io' }));
 }
 
-function frameworkRows(problem) {
-  return (problem.frameworkTests ?? []).map((spec, position) => ({
+function specRows(specs, kind) {
+  return (specs ?? []).map((spec, position) => ({
     input: null,
     expectedOutput: '',
     hidden: true,
     position,
-    kind: 'framework',
+    kind,
     spec,
   }));
 }
@@ -74,7 +74,10 @@ async function seedProblems(technologyIds) {
   const ids = new Map();
   for (const problem of catalog.problems) {
     const tests = testRows(problem);
-    const frameworkTests = frameworkRows(problem);
+    const specGroups = [
+      ['framework', specRows(problem.frameworkTests, 'framework')],
+      ['lab', specRows(problem.labChecks, 'lab')],
+    ];
     const existing = await prisma.problem.findUnique({
       where: { slug: problem.slug },
       select: { id: true, organizationId: true, _count: { select: { testCases: true, sourceChecks: true } } },
@@ -83,11 +86,12 @@ async function seedProblems(technologyIds) {
     if (existing) {
       if (existing.organizationId !== null) continue;
       ids.set(problem.slug, existing.id);
-            if (frameworkTests.length) {
-        const present = await prisma.testCase.count({ where: { problemId: existing.id, kind: 'framework' } });
+            for (const [kind, rows] of specGroups) {
+        if (!rows.length) continue;
+        const present = await prisma.testCase.count({ where: { problemId: existing.id, kind } });
         if (present === 0) {
-          await prisma.testCase.createMany({ data: frameworkTests.map((test) => ({ ...test, problemId: existing.id })) });
-          bump('problems filled with framework tests');
+          await prisma.testCase.createMany({ data: rows.map((test) => ({ ...test, problemId: existing.id })) });
+          bump(`problems filled with ${kind} tests`);
         }
       }
       const ioCount = await prisma.testCase.count({ where: { problemId: existing.id, kind: 'io' } });
@@ -127,7 +131,7 @@ async function seedProblems(technologyIds) {
         status: 'published',
         publishedAt: new Date(),
         visibility: 'listed',
-        testCases: { create: [...tests, ...frameworkTests] },
+        testCases: { create: [...tests, ...specGroups.flatMap(([, rows]) => rows)] },
         sourceChecks: { create: problem.sourceChecks },
       },
       select: { id: true },

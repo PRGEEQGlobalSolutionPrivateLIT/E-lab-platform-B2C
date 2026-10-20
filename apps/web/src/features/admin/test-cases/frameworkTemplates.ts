@@ -18,7 +18,49 @@ const sourceGroup = (file: string, pattern: string, message: string): FrameworkS
   forbiddenSourceChecks: [],
 });
 
+const LAB_CHECK_HELP =
+  'name is required. source is state (run command in the learner sandbox), code (inspect the learner code) or history (DevOps commands typed in the terminal). expect is succeeds, equals, contains, notContains, matches, notMatches, count, minCount or maxCount, compared against value. In commands, {{expr}} and {{code}} insert the learner code. message is shown when the check fails.';
+
 export const FRAMEWORK_GUIDES: Record<FrameworkRuntime, RuntimeGuide> = {
+  database: {
+    label: 'Database',
+    kind: 'Lab check',
+    help: `${LAB_CHECK_HELP} State commands use the problem's database language and the first number in the output is used for count checks.`,
+    template: {
+      name: 'Employee record was inserted',
+      source: 'state',
+      command: "SELECT COUNT(*) AS result FROM employees WHERE id = 1 AND name = 'Ananya';",
+      expect: 'count',
+      value: 1,
+      message: 'Insert the Ananya employee with id 1.',
+    },
+  },
+  shell: {
+    label: 'DevOps',
+    kind: 'Lab check',
+    help: `${LAB_CHECK_HELP} Commands run in the learner container. runner is shell, python or node; user, stdin, args, exit (zero, nonzero or any), noStderr and timeoutMs are optional.`,
+    template: {
+      name: 'Reports directory exists',
+      command: 'test -d /workspace/reports',
+      expect: 'succeeds',
+      message: 'Create the /workspace/reports directory.',
+    },
+  },
+  powerbi: {
+    label: 'Power BI',
+    kind: 'Power BI rule',
+    help: 'id, type, label and points are required. required marks rules that must pass. Other fields depend on type, for example datasetId, expected, columns, minimum, measureName or visualType. hint is shown when the rule fails.',
+    template: {
+      id: 'sales-table-name',
+      type: 'table-name',
+      datasetId: 'sales',
+      expected: 'Sales',
+      label: 'Imported table is named Sales',
+      points: 20,
+      required: true,
+      hint: 'Rename the imported table according to the problem statement.',
+    },
+  },
   express: {
     label: 'Express',
     kind: 'HTTP request',
@@ -95,5 +137,7 @@ export function summarizeSpec(runtime: FrameworkRuntime, spec: FrameworkSpec): s
     return `Shows "${str(spec.text)}"`;
   }
   if (kind === 'Rendered output') return str(spec.title) || `Renders "${str(spec.expectedOutput)}"`;
+  if (kind === 'Lab check') return str(spec.name);
+  if (kind === 'Power BI rule') return str(spec.label) || str(spec.id);
   return str(spec.title) || str(spec.id);
 }

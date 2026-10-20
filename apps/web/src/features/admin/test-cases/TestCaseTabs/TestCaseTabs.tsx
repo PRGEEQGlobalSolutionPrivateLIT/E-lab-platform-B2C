@@ -10,7 +10,7 @@ const TABS = [
   { label: "Overview", path: "", icon: LayoutGrid },
   { label: "Sample Tests", path: "/sample", icon: Eye },
   { label: "Hidden Tests", path: "/hidden", icon: EyeOff },
-  { label: "Framework Tests", path: "/framework", icon: Blocks },
+  { label: "Framework & Lab", path: "/framework", icon: Blocks },
   { label: "Source Checks", path: "/source-checks", icon: FileSearch },
 ] as const;
 

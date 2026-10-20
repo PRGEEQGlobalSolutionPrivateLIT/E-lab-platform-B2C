@@ -24,8 +24,8 @@ class ReasonFields {
 
 export class CreateTestCaseDto extends ReasonFields {
   @IsOptional()
-  @IsIn(['io', 'framework'])
-  kind?: 'io' | 'framework';
+  @IsIn(['io', 'framework', 'lab'])
+  kind?: 'io' | 'framework' | 'lab';
 
   @IsOptional()
   @IsObject()

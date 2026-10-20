@@ -2,9 +2,9 @@ export type Difficulty = 'easy' | 'medium' | 'hard';
 export type Visibility = 'sample' | 'hidden';
 export type CheckStatus = 'pass' | 'fail';
 
-export type TestKind = 'io' | 'framework';
+export type TestKind = 'io' | 'framework' | 'lab';
 
-export type FrameworkRuntime = 'express' | 'fastapi' | 'springboot' | 'aspnetcore' | 'react' | 'angular' | 'vue' | 'nextjs' | 'nestjs' | 'django';
+export type FrameworkRuntime = 'express' | 'fastapi' | 'springboot' | 'aspnetcore' | 'react' | 'angular' | 'vue' | 'nextjs' | 'nestjs' | 'django' | 'database' | 'shell' | 'powerbi';
 
 export type FrameworkSpec = Record<string, unknown>;
 
@@ -27,7 +27,7 @@ export interface TestCaseInput {
 }
 
 export interface FrameworkTestInput {
-  kind: 'framework';
+  kind: 'framework' | 'lab';
   spec: FrameworkSpec;
   hidden: true;
 }
@@ -45,6 +45,7 @@ export interface CoverageRow {
   technology: string;
   technologySlug: string;
   frameworkRuntime: FrameworkRuntime | null;
+  testKind: TestKind;
   difficulty: Difficulty;
   sampleTests: number;
   hiddenTests: number;

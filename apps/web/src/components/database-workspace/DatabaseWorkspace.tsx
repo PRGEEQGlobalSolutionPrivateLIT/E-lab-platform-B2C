@@ -1,5 +1,6 @@
 'use client';
 
+import { apiFetch } from '@/features/auth/apiFetch';
 import {
 
   useCallback,
@@ -635,7 +636,7 @@ export default function DatabaseWorkspace({
 
         const response =
 
-          await fetch(
+          await apiFetch(
 
             `${API_URL}/database-lab/sessions/${activeSessionId}/schema`,
 
@@ -809,7 +810,7 @@ export default function DatabaseWorkspace({
 
             const response =
 
-              await fetch(
+              await apiFetch(
 
                 `${API_URL}/database-lab/sessions`,
 
@@ -895,7 +896,7 @@ export default function DatabaseWorkspace({
 
             ) {
 
-              void fetch(
+              void apiFetch(
 
                 `${API_URL}/database-lab/sessions/${data.session.id}`,
 
@@ -1105,7 +1106,7 @@ export default function DatabaseWorkspace({
 
             const response =
 
-              await fetch(
+              await apiFetch(
 
                 `${API_URL}/database-lab/sessions/${sessionId}`,
 
@@ -1267,7 +1268,7 @@ export default function DatabaseWorkspace({
 
         const response =
 
-          await fetch(
+          await apiFetch(
 
             `${API_URL}/database-lab/sessions/${sessionId}/execute`,
 
@@ -1691,7 +1692,7 @@ export default function DatabaseWorkspace({
 
         const response =
 
-          await fetch(
+          await apiFetch(
 
             `${API_URL}/database-lab/sessions/${sessionId}/submit`,
 

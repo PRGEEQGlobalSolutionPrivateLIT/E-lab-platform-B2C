@@ -1233,8 +1233,52 @@ createApp(App).mount('#app');
 
 
 
+const RENDER_MARKER = '__ELAB_VUE_RENDER__';
+
+const RENDER_SCRIPT = [
+  "import { readdirSync } from 'node:fs';",
+  "import { createSSRApp } from 'vue';",
+  "import { renderToString } from 'vue/server-renderer';",
+  "const dir = '/workspace/.elab-ssr';",
+  'const names = readdirSync(dir);',
+  'const entry = names.find((name) => /^App\\.m?js$/.test(name)) ?? names.find((name) => /\\.m?js$/.test(name));',
+  "const mod = await import(dir + '/' + entry);",
+  'const html = await renderToString(createSSRApp(mod.default));',
+  `process.stdout.write('\\n${RENDER_MARKER}' + JSON.stringify(html) + '\\n');`,
+  '',
+].join('\n');
+
+const RENDER_STEPS = [
+  'rm -rf /workspace/.elab-ssr',
+  '/opt/vue/node_modules/.bin/vite build --ssr src/App.vue --outDir .elab-ssr --emptyOutDir --logLevel error',
+  'printf \'{"type":"module"}\' > /workspace/.elab-ssr/package.json',
+  'node /workspace/.elab-render.mjs',
+];
+
+function readRenderedHtml(stdout) {
+  const line = String(stdout ?? '')
+    .split(/\r?\n/)
+    .find((entry) => entry.startsWith(RENDER_MARKER));
+  if (!line) return null;
+  try {
+    return JSON.parse(line.slice(RENDER_MARKER.length));
+  } catch {
+    return null;
+  }
+}
+
+function withoutRenderMarker(stdout) {
+  return String(stdout ?? '')
+    .split(/\r?\n/)
+    .filter((entry) => !entry.startsWith(RENDER_MARKER))
+    .join('\n');
+}
+
+const collapseWhitespace = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
+
 function createDockerArgs(
   workspacePath,
+  renderForTests = false,
 ) {
   const dockerWorkspace =
     workspacePath.replace(
@@ -1249,6 +1293,7 @@ function createDockerArgs(
     'rm -rf /workspace/node_modules',
     'ln -s /opt/vue/node_modules /workspace/node_modules',
     '/opt/vue/node_modules/.bin/vite build',
+  ...(renderForTests ? RENDER_STEPS : []),
   ].join(' && ');
 
   return [
@@ -1464,14 +1509,9 @@ function buildTestResults(
 
 
     const passed =
-
-      expectedOutput
-
-        ? normalizedActual ===
-
-          expectedOutput
-
-        : true;
+      actualOutput !== null &&
+      Boolean(expectedOutput) &&
+      collapseWhitespace(normalizedActual) === collapseWhitespace(expectedOutput);
 
 
 
@@ -1789,19 +1829,13 @@ export async function runVueFramework({
 
 
 
-    const dockerArgs =
+    const renderForTests = Array.isArray(tests) && tests.length > 0;
 
+    if (renderForTests) {
+      await writeFile(join(workspacePath, '.elab-render.mjs'), RENDER_SCRIPT, 'utf8');
+    }
 
-
-      createDockerArgs(
-
-
-
-        workspacePath,
-
-
-
-      );
+    const dockerArgs = createDockerArgs(workspacePath, renderForTests);
 
 
 
@@ -1881,13 +1915,7 @@ export async function runVueFramework({
 
 
 
-    const buildOutput =
-
-      normalizeOutput(
-
-        stdout,
-
-      );
+    const buildOutput = normalizeOutput(withoutRenderMarker(stdout));
 
 
 
@@ -1901,13 +1929,9 @@ export async function runVueFramework({
 
 
 
-    const renderedOutput =
+    const renderedHtml = readRenderedHtml(stdout);
 
-      extractRenderedText(
-
-        workspaceFiles,
-
-      );
+    const renderedOutput = renderedHtml === null ? null : stripHtmlTags(renderedHtml);
 
 
 

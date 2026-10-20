@@ -1012,13 +1012,13 @@ export class PowerBILabService {
 
   ======================================================= */
 
-  checkSolution(
+  async checkSolution(
 
     attemptId: string,
 
     dto: CheckPowerBIDto,
 
-  ): PowerBIValidationSummary {
+  ): Promise<PowerBIValidationSummary> {
 
     const attempt =
 
@@ -1266,13 +1266,13 @@ export class PowerBILabService {
 
   ======================================================= */
 
-  submit(
+  async submit(
 
     attemptId: string,
 
     dto: SubmitPowerBIDto,
 
-  ): SubmitPowerBIResult {
+  ): Promise<SubmitPowerBIResult> {
 
     const attempt =
 
@@ -1312,7 +1312,7 @@ export class PowerBILabService {
 
     const validation =
 
-      this.validator
+      await this.validator
 
         .validateWorkspace(
 

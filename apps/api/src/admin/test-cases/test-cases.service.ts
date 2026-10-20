@@ -9,7 +9,7 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { AdminActor } from '../common/admin-actor.decorator.js';
 import { ProblemVersioningService } from '../problems/problem-versioning.service.js';
-import { frameworkRuntime, normalizeFrameworkSpec } from './framework-spec.js';
+import { frameworkRuntime, normalizeFrameworkSpec, testKindFor } from './framework-spec.js';
 import type { CreateSourceCheckDto, CreateTestCaseDto, ReorderTestCasesDto, UpdateSourceCheckDto, UpdateTestCaseDto, } from './test-cases.dto.js';
 
 type Tx = Prisma.TransactionClient;
@@ -69,9 +69,11 @@ export class TestCasesService {
     private readonly versioning: ProblemVersioningService,
   ) {}
 
-  private frameworkSpec(technologySlug: string, spec: unknown) {
-    const runtime = frameworkRuntime(technologySlug);
-    if (!runtime) throw new BadRequestException('Framework tests are only available for framework problems.');
+  private frameworkSpec(problem: { slug: string; workspaceType: string; technology: { slug: string } }, kind: string, spec: unknown) {
+    const runtime = frameworkRuntime(problem.technology.slug, problem.workspaceType, problem.slug);
+    if (!runtime || testKindFor(runtime) !== kind) {
+      throw new BadRequestException(kind === 'lab' ? 'Lab checks are only available for database, DevOps and Power BI problems.' : 'Framework tests are only available for framework problems.');
+    }
     return normalizeFrameworkSpec(runtime, spec) as Prisma.InputJsonObject;
   }
 
@@ -136,6 +138,7 @@ export class TestCasesService {
         title: true,
         status: true,
         difficulty: true,
+        workspaceType: true,
         technology: { select: { name: true, slug: true } },
       },
     });
@@ -147,20 +150,21 @@ export class TestCasesService {
     const counts = new Map<string, { sample: number; hidden: number; framework: number }>();
     for (const row of rows) {
       const entry = counts.get(row.problemId) ?? { sample: 0, hidden: 0, framework: 0 };
-      if (row.kind === 'framework') entry.framework += row._count._all;
+      if (row.kind === 'framework' || row.kind === 'lab') entry.framework += row._count._all;
       else if (row.hidden) entry.hidden += row._count._all;
       else entry.sample += row._count._all;
       counts.set(row.problemId, entry);
     }
     const items = problems.map((problem) => {
       const entry = counts.get(problem.id) ?? { sample: 0, hidden: 0, framework: 0 };
-      const runtime = frameworkRuntime(problem.technology.slug);
+      const runtime = frameworkRuntime(problem.technology.slug, problem.workspaceType, problem.slug);
       return {
         ...problem,
         difficulty: problem.difficulty.toLowerCase(),
         technology: problem.technology.name,
         technologySlug: problem.technology.slug,
         frameworkRuntime: runtime,
+        testKind: runtime ? testKindFor(runtime) : 'io',
         sampleTests: entry.sample,
         hiddenTests: runtime ? entry.hidden + entry.framework : entry.hidden,
         frameworkTests: entry.framework,
@@ -201,7 +205,7 @@ export class TestCasesService {
         version: problem.version,
         difficulty: problem.difficulty.toLowerCase(),
         technology: problem.technology,
-        frameworkRuntime: frameworkRuntime(problem.technology.slug),
+        frameworkRuntime: frameworkRuntime(problem.technology.slug, problem.workspaceType, problem.slug),
         hasReferenceSolution: Boolean(problem.referenceSolution),
       },
       testCases,
@@ -212,10 +216,10 @@ export class TestCasesService {
   async create(problemId: string, dto: CreateTestCaseDto, actor: AdminActor, organizationId: string | null = null) {
     const problem = await this.problemOrThrow(problemId, organizationId);
     const { reason, kind = 'io', spec, ...fields } = dto;
-    const framework = kind === 'framework';
-    if (framework && !fields.hidden) throw new BadRequestException('Framework tests are always hidden.');
+    const framework = kind === 'framework' || kind === 'lab';
+    if (framework && !fields.hidden) throw new BadRequestException('Framework tests and lab checks are always hidden.');
     if (!framework && fields.expectedOutput === undefined) throw new BadRequestException('expectedOutput is required.');
-    const frameworkSpec = framework ? this.frameworkSpec(problem.technology.slug, spec) : undefined;
+    const frameworkSpec = framework ? this.frameworkSpec(problem, kind, spec) : undefined;
     return this.prisma.$transaction(async (tx) => {
       const last = await tx.testCase.aggregate({
         where: { problemId },
@@ -239,7 +243,7 @@ export class TestCasesService {
         action: 'test_case.create',
         entityType: 'test_case',
         entityId: test.id,
-        summary: framework ? 'Added a framework test' : `Added a ${test.hidden ? 'hidden' : 'sample'} test`,
+        summary: framework ? `Added a ${kind === 'lab' ? 'lab check' : 'framework test'}` : `Added a ${test.hidden ? 'hidden' : 'sample'} test`,
       });
       return test;
     });
@@ -248,19 +252,19 @@ export class TestCasesService {
   async update(id: string, dto: UpdateTestCaseDto, actor: AdminActor, organizationId: string | null = null) {
     const existing = await this.prisma.testCase.findFirst({
       where: { id, problem: { organizationId } },
-      include: { problem: { select: { technology: { select: { slug: true } } } } },
+      include: { problem: { select: { slug: true, workspaceType: true, technology: { select: { slug: true } } } } },
     });
     if (!existing) throw new NotFoundException('Test case not found.');
     const { reason, kind, spec, ...rest } = dto;
     if (kind !== undefined && kind !== existing.kind) throw new BadRequestException('The kind of a test cannot be changed.');
-    const framework = existing.kind === 'framework';
-    if (framework && rest.hidden === false) throw new BadRequestException('Framework tests are always hidden.');
+    const framework = existing.kind === 'framework' || existing.kind === 'lab';
+    if (framework && rest.hidden === false) throw new BadRequestException('Framework tests and lab checks are always hidden.');
     const fields = framework
       ? {
           ...(rest.score !== undefined ? { score: rest.score } : {}),
           ...(rest.timeoutMs !== undefined ? { timeoutMs: rest.timeoutMs } : {}),
           ...(rest.enabled !== undefined ? { enabled: rest.enabled } : {}),
-          ...(spec !== undefined ? { spec: this.frameworkSpec(existing.problem.technology.slug, spec) } : {}),
+          ...(spec !== undefined ? { spec: this.frameworkSpec(existing.problem, existing.kind, spec) } : {}),
         }
       : rest;
     const changes = testChanges(

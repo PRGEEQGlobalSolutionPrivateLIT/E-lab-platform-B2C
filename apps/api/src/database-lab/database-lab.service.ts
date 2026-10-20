@@ -16,6 +16,9 @@ import {
 
 import { randomUUID } from 'node:crypto';
 
+import { evaluateLabChecks } from '../labs/lab-checks.js';
+import { LabChecksService } from '../labs/lab-checks.service.js';
+
 import type { CreateDatabaseSessionDto } from './dto/create-database-session.dto.js';
 
 import type { ExecuteDatabaseQueryDto } from './dto/execute-database-query.dto.js';
@@ -26,31 +29,26 @@ import { PostgreSqlSandboxService } from './sandbox/postgresql-sandbox.service.j
 
 import type { PostgreSqlSandbox } from './sandbox/postgresql-sandbox.service.js';
 
-import { PostgreSqlValidatorService } from './validation/postgresql-validator.service.js';
 
 import { MysqlSandboxService } from './sandbox/mysql-sandbox.service.js';
 
 import type { MysqlSandbox } from './sandbox/mysql-sandbox.service.js';
 
-import { MysqlValidatorService } from './validation/mysql-validator.service.js';
 
 import { SqlServerSandboxService } from './sandbox/sqlserver-sandbox.service.js';
 
 import type { SqlServerSandbox } from './sandbox/sqlserver-sandbox.service.js';
 
-import { SqlServerValidatorService } from './validation/sqlserver-validator.service.js';
 
 import { MongoDbSandboxService } from './sandbox/mongodb-sandbox.service.js';
 
 import type { MongoDbSandbox } from './sandbox/mongodb-sandbox.service.js';
 
-import { MongoDbValidatorService } from './validation/mongodb-validator.service.js';
 
 import { RedisSandboxService } from './sandbox/redis-sandbox.service.js';
 
 import type { RedisSandbox } from './sandbox/redis-sandbox.service.js';
 
-import { RedisValidatorService } from './validation/redis-validator.service.js';
 
 type DatabaseSessionStatus =
 
@@ -188,41 +186,24 @@ export class DatabaseLabService
 
       PostgreSqlSandboxService,
 
-    private readonly postgresqlValidatorService:
-
-      PostgreSqlValidatorService,
-
     private readonly mysqlSandboxService:
 
       MysqlSandboxService,
-
-    private readonly mysqlValidatorService:
-
-      MysqlValidatorService,
 
     private readonly sqlServerSandboxService:
 
       SqlServerSandboxService,
 
-    private readonly sqlServerValidatorService:
-
-      SqlServerValidatorService,
-
     private readonly mongoDbSandboxService:
 
       MongoDbSandboxService,
-
-    private readonly mongoDbValidatorService:
-
-      MongoDbValidatorService,
 
     private readonly redisSandboxService:
 
       RedisSandboxService,
 
-    private readonly redisValidatorService:
-
-      RedisValidatorService,
+    private readonly labChecks:
+      LabChecksService,
 
   ) {}
 
@@ -1433,341 +1414,20 @@ export class DatabaseLabService
   }
 
   private async validateSessionState(
-
     session: DatabaseSession,
-
     learnerCode = '',
-
   ): Promise<NormalizedValidation> {
-
-    const submittedCode =
-
-      learnerCode.trim();
-
-    if (
-
-      !session.sandbox
-
-    ) {
-
-      throw new BadRequestException(
-
-        'Database sandbox is not available for this session.',
-
-      );
-
+    if (!session.sandbox) {
+      throw new BadRequestException('Database sandbox is not available for this session.');
     }
-
-    if (
-
-      session.technologySlug ===
-
-      'mysql'
-
-    ) {
-
-      const result =
-
-        await this.mysqlValidatorService.validateState(
-
-          session.problemSlug,
-
-          session.sandbox as MysqlSandbox,
-
-        );
-
-      return {
-
-        accepted:
-
-          result.accepted,
-
-        passedTests:
-
-          result.passedTests,
-
-        totalTests:
-
-          result.totalTests,
-
-        score:
-
-          result.score,
-
-        message:
-
-          result.message,
-
-        tests:
-
-          result.tests,
-
-      };
-
-    }
-
-    if (
-
-      session.technologySlug ===
-
-      'postgresql'
-
-    ) {
-
-      const result =
-
-        await this.postgresqlValidatorService.validateState(
-
-          session.problemSlug,
-
-          session.sandbox as PostgreSqlSandbox,
-
-        );
-
-      return {
-
-        accepted:
-
-          result.accepted,
-
-        passedTests:
-
-          result.passedTests,
-
-        totalTests:
-
-          result.totalTests,
-
-        score:
-
-          result.score,
-
-        message:
-
-          result.message,
-
-        tests:
-
-          result.tests,
-
-      };
-
-    }
-
-    if (
-
-      session.technologySlug ===
-
-      'sqlserver'
-
-    ) {
-
-      /*
-
-       * The SQL Server validator created for this module exposes:
-
-       *
-
-       * validate(sandbox, problemSlug)
-
-       *
-
-       * and currently returns:
-
-       *
-
-       * { accepted, message }
-
-       *
-
-       * Normalize that result to the common submission response.
-
-       */
-
-      const result =
-
-        await this.sqlServerValidatorService.validate(
-
-          session.sandbox as SqlServerSandbox,
-
-          session.problemSlug,
-
-        );
-
-      return {
-
-        accepted:
-
-          result.accepted,
-
-        passedTests:
-
-          result.accepted
-
-            ? 1
-
-            : 0,
-
-        totalTests:
-
-          1,
-
-        score:
-
-          result.accepted
-
-            ? 100
-
-            : 0,
-
-        message:
-
-          result.message,
-
-        tests: [
-
-          {
-
-            name:
-
-              'SQL Server hidden validation',
-
-            passed:
-
-              result.accepted,
-
-            message:
-
-              result.message,
-
-          },
-
-        ],
-
-      };
-
-    }
-
-    if (
-
-      session.technologySlug ===
-
-      'mongodb'
-
-    ) {
-
-      const result =
-
-        await this.mongoDbValidatorService.validate(
-
-          session.sandbox as MongoDbSandbox,
-
-          session.problemSlug,
-
-          submittedCode,
-
-        );
-
-      const tests =
-
-        result.tests.map(
-
-          (test) => ({
-
-            name: test.name,
-
-            passed: test.passed,
-
-            message: test.message ?? '',
-
-          }),
-
-        );
-
-      const passedTests =
-
-        tests.filter(
-
-          (test) => test.passed,
-
-        ).length;
-
-      const totalTests =
-
-        tests.length;
-
-      return {
-
-        accepted: result.passed,
-
-        passedTests,
-
-        totalTests,
-
-        score:
-
-          totalTests === 0
-
-            ? 0
-
-            : Math.round(
-
-                (passedTests / totalTests) * 100,
-
-              ),
-
-        message: result.message,
-
-        tests,
-
-      };
-
-    }
-
-    if (
-
-      session.technologySlug ===
-
-      'redis'
-
-    ) {
-
-      const result =
-
-        await this.redisValidatorService.validateState(
-
-          session.problemSlug,
-
-          session.sandbox as RedisSandbox,
-
-          submittedCode,
-
-        );
-
-      return {
-
-        accepted: result.accepted,
-
-        passedTests: result.passedTests,
-
-        totalTests: result.totalTests,
-
-        score: result.score,
-
-        message: result.message,
-
-        tests: result.tests,
-
-      };
-
-    }
-
-    throw new BadRequestException(
-
-      `Submission validation for "${session.technologySlug}" is not supported yet.`,
-
-    );
-
+    const checks = await this.labChecks.checks(session.problemSlug);
+    return evaluateLabChecks(checks, {
+      code: learnerCode,
+      run: async (_check, command) => {
+        const result = await this.executeSqlForSession(session, command);
+        return { exitCode: result.exitCode ?? 0, stdout: result.stdout ?? '', stderr: result.stderr ?? '' };
+      },
+    });
   }
 
   private buildSubmissionResponse(

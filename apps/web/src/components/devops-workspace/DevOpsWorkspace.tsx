@@ -2,6 +2,7 @@
 
 
 
+import { apiFetch } from '@/features/auth/apiFetch';
 import {
 
 
@@ -130,7 +131,7 @@ const normalizeBaseUrl = (value: string) => value.trim().replace(/\/+$/, '');
 
 const API_URL = normalizeBaseUrl(process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1');
 const SOCKET_URL = normalizeBaseUrl(
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? API_URL.replace(/\/api\/v1\/?$/, ''),
+  process.env.NEXT_PUBLIC_SOCKET_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? API_URL.replace(/\/api\/v1\/?$/, ''),
 ).replace(/\/api\/v1\/?$/, '');
 
 const TERMINAL_NAMESPACE =
@@ -138,6 +139,13 @@ const TERMINAL_NAMESPACE =
 
 
   '/devops-terminal';
+
+async function requestTerminalTicket(sessionId: string): Promise<string> {
+  const response = await apiFetch(`${API_URL}/devops-lab/sessions/${encodeURIComponent(sessionId)}/terminal-ticket`, { method: 'POST' });
+  const data = response.ok ? ((await response.json()) as { ticket?: string }) : null;
+  if (!data?.ticket) throw new Error('Unable to open the terminal.');
+  return data.ticket;
+}
 
 
 
@@ -1851,7 +1859,7 @@ export default function DevOpsWorkspace({
 
 
 
-          await fetch(
+          await apiFetch(
 
 
 
@@ -2075,7 +2083,7 @@ export default function DevOpsWorkspace({
 
 
 
-          await fetch(
+          await apiFetch(
 
 
 
@@ -2644,6 +2652,12 @@ export default function DevOpsWorkspace({
 
 
             const socket = io(`${SOCKET_URL}${TERMINAL_NAMESPACE}`, {
+
+              auth: (callback: (data: object) => void) => {
+                void requestTerminalTicket(created.sessionId)
+                  .then((ticket) => callback({ ticket }))
+                  .catch(() => callback({}));
+              },
 
 
 
@@ -5471,7 +5485,7 @@ export default function DevOpsWorkspace({
 
 
 
-            await fetch(
+            await apiFetch(
 
 
 
