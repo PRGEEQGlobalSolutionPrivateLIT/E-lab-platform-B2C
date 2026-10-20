@@ -1225,7 +1225,7 @@ export default function CodingWorkspacePage() {
   ======================================================= */
 
   const runCodeWorkspace = async () => {
-    const response = await fetch(`${API_URL}/executions/run`, {
+    const response = await apiFetch(`${API_URL}/executions/run`, {
       method: "POST",
 
       headers: {
@@ -1390,7 +1390,7 @@ export default function CodingWorkspacePage() {
          API REQUEST
       =============================================== */
 
-    const response = await fetch(`${API_URL}/framework-executions/run`, {
+    const response = await apiFetch(`${API_URL}/framework-executions/run`, {
       method: "POST",
 
       headers: {
@@ -1801,7 +1801,7 @@ export default function CodingWorkspacePage() {
              FRAMEWORK SUBMISSION API
           =============================================== */
 
-        const response = await fetch(`${API_URL}/framework-submissions`, {
+        const response = await apiFetch(`${API_URL}/framework-submissions`, {
           method: "POST",
 
           headers: {
@@ -1963,7 +1963,7 @@ export default function CodingWorkspacePage() {
            NORMAL SUBMISSION
         =================================================== */
 
-      const response = await fetch(`${API_URL}/submissions`, {
+      const response = await apiFetch(`${API_URL}/submissions`, {
         method: "POST",
 
         headers: {

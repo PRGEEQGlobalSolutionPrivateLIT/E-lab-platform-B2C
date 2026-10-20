@@ -59,10 +59,22 @@ function testRows(problem) {
   ].map((test, position) => ({ ...test, position, kind: 'io' }));
 }
 
+function frameworkRows(problem) {
+  return (problem.frameworkTests ?? []).map((spec, position) => ({
+    input: null,
+    expectedOutput: '',
+    hidden: true,
+    position,
+    kind: 'framework',
+    spec,
+  }));
+}
+
 async function seedProblems(technologyIds) {
   const ids = new Map();
   for (const problem of catalog.problems) {
     const tests = testRows(problem);
+    const frameworkTests = frameworkRows(problem);
     const existing = await prisma.problem.findUnique({
       where: { slug: problem.slug },
       select: { id: true, organizationId: true, _count: { select: { testCases: true, sourceChecks: true } } },
@@ -71,7 +83,15 @@ async function seedProblems(technologyIds) {
     if (existing) {
       if (existing.organizationId !== null) continue;
       ids.set(problem.slug, existing.id);
-      const empty = existing._count.testCases === 0 && existing._count.sourceChecks === 0;
+            if (frameworkTests.length) {
+        const present = await prisma.testCase.count({ where: { problemId: existing.id, kind: 'framework' } });
+        if (present === 0) {
+          await prisma.testCase.createMany({ data: frameworkTests.map((test) => ({ ...test, problemId: existing.id })) });
+          bump('problems filled with framework tests');
+        }
+      }
+      const ioCount = await prisma.testCase.count({ where: { problemId: existing.id, kind: 'io' } });
+      const empty = ioCount === 0 && existing._count.sourceChecks === 0;
       if (empty && (tests.length || problem.sourceChecks.length)) {
         await prisma.$transaction([
           prisma.testCase.createMany({ data: tests.map((test) => ({ ...test, problemId: existing.id })) }),
@@ -107,7 +127,7 @@ async function seedProblems(technologyIds) {
         status: 'published',
         publishedAt: new Date(),
         visibility: 'listed',
-        testCases: { create: tests },
+        testCases: { create: [...tests, ...frameworkTests] },
         sourceChecks: { create: problem.sourceChecks },
       },
       select: { id: true },

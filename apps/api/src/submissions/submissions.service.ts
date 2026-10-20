@@ -14,27 +14,14 @@ import {
   LearnerCatalogService,
 } from '../learner/learner-catalog.service.js';
 import { getPythonMachineLearningDataset } from '../ai-ml/python-machine-learning-datasets.js';
-import {
-  getNextJsTestCases,
-  type NextJsHiddenTestCase,
-} from './nextjs-test-cases.js';
-import {
-  getNestJsTestCases,
-  type NestJsHiddenTestCase,
-} from './nestjs-test-cases.js';
-import {
-  getDjangoTestCases,
-  type DjangoHiddenTestCase,
-} from './django-test-cases.js';
-import {
-  getSpringBootTestCases,
-  type SpringBootHiddenTestCase,
-} from './springboot-test-cases.js';
-import {
-  getAspNetCoreTestCases,
-  type AspNetCoreHiddenTestCase,
-} from './aspnetcore-test-cases.js';
-import { getFastApiTestCases } from './fastapi-test-cases.js';
+import type {
+  AspNetCoreHiddenTestCase,
+  DjangoHiddenTestCase,
+  FastApiHiddenTestCase,
+  NestJsHiddenTestCase,
+  NextJsHiddenTestCase,
+  SpringBootHiddenTestCase,
+} from './framework-test.types.js';
 
 /* =========================================================
    TYPES
@@ -607,7 +594,7 @@ export class SubmissionsService implements OnModuleInit {
      Hidden test definitions never go to the learner browser.
   ======================================================= */
 
-  private async submitNextJs(body: SubmissionRequest, language: string) {
+  private async submitNextJs(body: SubmissionRequest, language: string, userId: string | null) {
     /* =====================================================
        NEXT.JS CURRENTLY USES TYPESCRIPT
     ===================================================== */
@@ -622,7 +609,7 @@ export class SubmissionsService implements OnModuleInit {
        HIDDEN TESTS
     ===================================================== */
 
-    const testCases = getNextJsTestCases(body.problemSlug);
+    const testCases = await this.catalog.frameworkTests<NextJsHiddenTestCase>(userId, body.problemSlug);
 
     if (testCases.length === 0) {
       throw new BadRequestException(
@@ -1127,7 +1114,7 @@ export class SubmissionsService implements OnModuleInit {
      Hidden test definitions never go to the learner browser.
   ======================================================= */
 
-  private async submitNestJs(body: SubmissionRequest, language: string) {
+  private async submitNestJs(body: SubmissionRequest, language: string, userId: string | null) {
     /* =====================================================
        NESTJS CURRENTLY USES TYPESCRIPT
     ===================================================== */
@@ -1142,7 +1129,7 @@ export class SubmissionsService implements OnModuleInit {
        HIDDEN TESTS
     ===================================================== */
 
-    const testCases = getNestJsTestCases(body.problemSlug);
+    const testCases = await this.catalog.frameworkTests<NestJsHiddenTestCase>(userId, body.problemSlug);
 
     if (testCases.length === 0) {
       throw new BadRequestException(
@@ -1647,7 +1634,7 @@ export class SubmissionsService implements OnModuleInit {
      Hidden test definitions never go to the learner browser.
   ======================================================= */
 
-  private async submitDjango(body: SubmissionRequest, language: string) {
+  private async submitDjango(body: SubmissionRequest, language: string, userId: string | null) {
     /* =====================================================
        DJANGO CURRENTLY USES PYTHON
     ===================================================== */
@@ -1662,7 +1649,7 @@ export class SubmissionsService implements OnModuleInit {
        HIDDEN TESTS
     ===================================================== */
 
-    const testCases = getDjangoTestCases(body.problemSlug);
+    const testCases = await this.catalog.frameworkTests<DjangoHiddenTestCase>(userId, body.problemSlug);
 
     if (testCases.length === 0) {
       throw new BadRequestException(
@@ -2022,14 +2009,14 @@ export class SubmissionsService implements OnModuleInit {
      6. Return ACCEPTED / WRONG_ANSWER using judge test results.
   ======================================================= */
 
-  private async submitSpringBoot(body: SubmissionRequest, language: string) {
+  private async submitSpringBoot(body: SubmissionRequest, language: string, userId: string | null) {
     if (language !== 'java') {
       throw new BadRequestException(
         'Spring Boot practice problems currently require Java.',
       );
     }
 
-    const testCases = getSpringBootTestCases(body.problemSlug);
+    const testCases = await this.catalog.frameworkTests<SpringBootHiddenTestCase>(userId, body.problemSlug);
 
     if (testCases.length === 0) {
       throw new BadRequestException(
@@ -2057,12 +2044,9 @@ export class SubmissionsService implements OnModuleInit {
 
         body: JSON.stringify({
           problemSlug: body.problemSlug,
-
           runtime: 'springboot',
-
           files,
-
-          testCases,
+          tests: testCases,
         }),
       });
     } catch (error) {
@@ -2374,14 +2358,14 @@ export class SubmissionsService implements OnModuleInit {
      6. Return ACCEPTED / WRONG_ANSWER.
   ======================================================= */
 
-  private async submitAspNetCore(body: SubmissionRequest, language: string) {
+  private async submitAspNetCore(body: SubmissionRequest, language: string, userId: string | null) {
     if (language !== 'csharp') {
       throw new BadRequestException(
         'ASP.NET Core practice problems currently require C#.',
       );
     }
 
-    const testCases = getAspNetCoreTestCases(body.problemSlug);
+    const testCases = await this.catalog.frameworkTests<AspNetCoreHiddenTestCase>(userId, body.problemSlug);
 
     if (testCases.length === 0) {
       throw new BadRequestException(
@@ -2593,14 +2577,14 @@ export class SubmissionsService implements OnModuleInit {
      hidden framework tests are not exposed to the browser.
   ======================================================= */
 
-  private async submitFastApi(body: SubmissionRequest, language: string) {
+  private async submitFastApi(body: SubmissionRequest, language: string, userId: string | null) {
     if (language !== 'python') {
       throw new BadRequestException(
         'FastAPI practice problems currently require Python.',
       );
     }
 
-    const allTestCases = getFastApiTestCases(body.problemSlug);
+    const allTestCases = await this.catalog.frameworkTests<FastApiHiddenTestCase>(userId, body.problemSlug);
 
     /*
      * The current FastAPI Judge runner executes HTTP tests.
@@ -2925,7 +2909,7 @@ export class SubmissionsService implements OnModuleInit {
       normalizedTechnology === 'fast api';
 
     if (isFastApi) {
-      return await this.submitFastApi(body, language);
+      return await this.submitFastApi(body, language, userId);
     }
 
     /* =====================================================
@@ -2941,7 +2925,7 @@ export class SubmissionsService implements OnModuleInit {
       normalizedTechnology === 'aspnet-core';
 
     if (isAspNetCore) {
-      return this.submitAspNetCore(body, language);
+      return this.submitAspNetCore(body, language, userId);
     }
 
     /* =====================================================
@@ -2966,7 +2950,7 @@ export class SubmissionsService implements OnModuleInit {
     ===================================================== */
 
     if (body.problemSlug.startsWith('nextjs-')) {
-      return await this.submitNextJs(body, language);
+      return await this.submitNextJs(body, language, userId);
     }
 
     /* =====================================================
@@ -2977,7 +2961,7 @@ export class SubmissionsService implements OnModuleInit {
     ===================================================== */
 
     if (body.problemSlug.startsWith('nestjs-')) {
-      return await this.submitNestJs(body, language);
+      return await this.submitNestJs(body, language, userId);
     }
 
     /* =====================================================
@@ -2988,7 +2972,7 @@ export class SubmissionsService implements OnModuleInit {
     ===================================================== */
 
     if (body.problemSlug.startsWith('django-')) {
-      return await this.submitDjango(body, language);
+      return await this.submitDjango(body, language, userId);
     }
 
     /* =====================================================
@@ -3002,7 +2986,7 @@ export class SubmissionsService implements OnModuleInit {
       body.problemSlug.startsWith('springboot-') ||
       body.problemSlug.startsWith('spring-boot-')
     ) {
-      return await this.submitSpringBoot(body, language);
+      return await this.submitSpringBoot(body, language, userId);
     }
 
     /* =====================================================

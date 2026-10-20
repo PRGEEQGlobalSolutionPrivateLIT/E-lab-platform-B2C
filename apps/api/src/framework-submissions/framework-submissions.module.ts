@@ -1,30 +1,14 @@
-import {
-  Module,
-} from '@nestjs/common';
+import { Module } from '@nestjs/common';
 
-import {
-  FrameworkSubmissionsController,
-} from './framework-submissions.controller.js';
-
-import {
-  FrameworkSubmissionsService,
-} from './framework-submissions.service.js';
-
-/* =========================================================
-   FRAMEWORK SUBMISSIONS MODULE
-========================================================= */
+import { AuthModule } from '../auth/auth.module.js';
+import { LearnerModule } from '../learner/learner.module.js';
+import { FrameworkSubmissionsController } from './framework-submissions.controller.js';
+import { FrameworkSubmissionsService } from './framework-submissions.service.js';
 
 @Module({
-  controllers: [
-    FrameworkSubmissionsController,
-  ],
-
-  providers: [
-    FrameworkSubmissionsService,
-  ],
-
-  exports: [
-    FrameworkSubmissionsService,
-  ],
+  imports: [AuthModule, LearnerModule],
+  controllers: [FrameworkSubmissionsController],
+  providers: [FrameworkSubmissionsService],
+  exports: [FrameworkSubmissionsService],
 })
 export class FrameworkSubmissionsModule {}

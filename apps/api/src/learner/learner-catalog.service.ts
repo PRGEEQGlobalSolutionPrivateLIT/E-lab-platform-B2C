@@ -129,7 +129,9 @@ export class LearnerCatalogService {
       skills: strings(row.skills),
       estimatedMinutes: row.estimatedMinutes,
       defaultLanguage: row.defaultLanguage,
-      allowedLanguages: strings(row.allowedLanguages).length ? strings(row.allowedLanguages) : [row.defaultLanguage],
+      allowedLanguages: strings(row.allowedLanguages).length
+        ? strings(row.allowedLanguages)
+        : [row.defaultLanguage],
       source: row.organizationId
         ? ('institution' as const)
         : ('platform' as const),
@@ -183,9 +185,15 @@ export class LearnerCatalogService {
       },
     });
     if (!row) throw new NotFoundException('Problem not found.');
-    const authored = Array.isArray(row.sampleTests) ? (row.sampleTests as Array<Record<string, unknown>>) : [];
-    const config = row.config && typeof row.config === 'object' && !Array.isArray(row.config) ? (row.config as Record<string, unknown>) : {};
-    const text = (value: unknown) => (typeof value === 'string' ? value : undefined);
+    const authored = Array.isArray(row.sampleTests)
+      ? (row.sampleTests as Array<Record<string, unknown>>)
+      : [];
+    const config =
+      row.config && typeof row.config === 'object' && !Array.isArray(row.config)
+        ? (row.config as Record<string, unknown>)
+        : {};
+    const text = (value: unknown) =>
+      typeof value === 'string' ? value : undefined;
     return {
       ...this.summary(row, scope),
       problemStatement: row.problemStatement,
@@ -194,7 +202,9 @@ export class LearnerCatalogService {
       constraints: strings(row.constraints),
       notes: strings(row.notes),
       starterCode: row.starterCode ?? undefined,
-      starterFiles: Array.isArray(row.starterFiles) ? row.starterFiles : undefined,
+      starterFiles: Array.isArray(row.starterFiles)
+        ? row.starterFiles
+        : undefined,
       powerBi: config.powerBi ?? undefined,
       sampleTests: row.testCases.length
         ? row.testCases.map((test, index) => ({
@@ -224,13 +234,28 @@ export class LearnerCatalogService {
           description: true,
           level: true,
           position: true,
-          technology: { select: { slug: true, name: true, pathName: true, pathShortName: true, pathDescription: true } },
-          problems: { orderBy: { position: 'asc' }, select: { problem: { select: { slug: true } } } },
+          technology: {
+            select: {
+              slug: true,
+              name: true,
+              pathName: true,
+              pathShortName: true,
+              pathDescription: true,
+            },
+          },
+          problems: {
+            orderBy: { position: 'asc' },
+            select: { problem: { select: { slug: true } } },
+          },
         },
       }),
     ]);
     const visible = new Set(rows.map((row) => row.slug));
-    const staged = new Set(stages.flatMap((stage) => stage.problems.map((link) => link.problem.slug)));
+    const staged = new Set(
+      stages.flatMap((stage) =>
+        stage.problems.map((link) => link.problem.slug),
+      ),
+    );
     const paths = new Map<string, PracticePathView>();
     const pathFor = (technology: PathTechnology) => {
       const existing = paths.get(technology.slug);
@@ -239,7 +264,9 @@ export class LearnerCatalogService {
         technologySlug: technology.slug,
         name: technology.pathName ?? technology.name,
         shortName: technology.pathShortName ?? technology.name,
-        description: technology.pathDescription ?? `Practice problems for ${technology.name}.`,
+        description:
+          technology.pathDescription ??
+          `Practice problems for ${technology.name}.`,
         stages: [],
       };
       paths.set(technology.slug, created);
@@ -252,19 +279,35 @@ export class LearnerCatalogService {
         description: stage.description,
         level: LEVEL_LABEL[stage.level],
         order: stage.position + 1,
-        problemSlugs: stage.problems.map((link) => link.problem.slug).filter((slug) => visible.has(slug)),
+        problemSlugs: stage.problems
+          .map((link) => link.problem.slug)
+          .filter((slug) => visible.has(slug)),
       });
     }
-    const uploaded = new Map<string, { technology: PathTechnology; institution: string[]; platform: string[] }>();
+    const uploaded = new Map<
+      string,
+      { technology: PathTechnology; institution: string[]; platform: string[] }
+    >();
     for (const row of rows) {
-      if (staged.has(row.slug) || (row.organizationId === null && row.createdById === null)) continue;
-      const entry = uploaded.get(row.technology.slug) ?? { technology: row.technology, institution: [], platform: [] };
+      if (
+        staged.has(row.slug) ||
+        (row.organizationId === null && row.createdById === null)
+      )
+        continue;
+      const entry = uploaded.get(row.technology.slug) ?? {
+        technology: row.technology,
+        institution: [],
+        platform: [],
+      };
       (row.organizationId ? entry.institution : entry.platform).push(row.slug);
       uploaded.set(row.technology.slug, entry);
     }
     for (const { technology, institution, platform } of uploaded.values()) {
       const path = pathFor(technology);
-      let order = path.stages.reduce((max, stage) => Math.max(max, stage.order), 0);
+      let order = path.stages.reduce(
+        (max, stage) => Math.max(max, stage.order),
+        0,
+      );
       if (institution.length) {
         path.stages.push({
           slug: `${technology.slug}-institution`,
@@ -289,7 +332,9 @@ export class LearnerCatalogService {
     return {
       institution: scope.institution,
       problems: rows.map((row) => this.summary(row, scope)),
-      practicePaths: [...paths.values()].filter((path) => path.stages.some((stage) => stage.problemSlugs.length)),
+      practicePaths: [...paths.values()].filter((path) =>
+        path.stages.some((stage) => stage.problemSlugs.length),
+      ),
     };
   }
 
@@ -297,7 +342,12 @@ export class LearnerCatalogService {
     const [domains, stacks] = await Promise.all([
       this.prisma.domain.findMany({
         orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
-        select: { slug: true, name: true, description: true, pathDescription: true },
+        select: {
+          slug: true,
+          name: true,
+          description: true,
+          pathDescription: true,
+        },
       }),
       this.prisma.stack.findMany({
         orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
@@ -318,7 +368,10 @@ export class LearnerCatalogService {
               description: true,
               technologySlug: true,
               topics: true,
-              problems: { orderBy: { position: 'asc' }, select: { problem: { select: { slug: true } } } },
+              problems: {
+                orderBy: { position: 'asc' },
+                select: { problem: { select: { slug: true } } },
+              },
             },
           },
         },
@@ -350,7 +403,10 @@ export class LearnerCatalogService {
         })),
       mappings: Object.fromEntries(
         stacks.flatMap((stack) =>
-          stack.modules.map((module) => [`${stack.slug}:${module.slug}`, module.problems.map((link) => link.problem.slug)]),
+          stack.modules.map((module) => [
+            `${stack.slug}:${module.slug}`,
+            module.problems.map((link) => link.problem.slug),
+          ]),
         ),
       ),
     };
@@ -438,13 +494,18 @@ export class LearnerCatalogService {
     };
   }
 
-    async judgeTests(userId: string | null, slug: string) {
+  async judgeTests(userId: string | null, slug: string) {
     const scope = await this.scope(userId);
     const row = await this.prisma.problem.findFirst({
       where: {
         slug,
         status: 'published',
-        OR: [{ organizationId: null }, ...(scope.organizationId ? [{ organizationId: scope.organizationId }] : [])],
+        OR: [
+          { organizationId: null },
+          ...(scope.organizationId
+            ? [{ organizationId: scope.organizationId }]
+            : []),
+        ],
       },
       select: {
         testCases: {
@@ -461,12 +522,18 @@ export class LearnerCatalogService {
     });
     if (!row) return [];
     const toRegex = (pattern: string, isRegex: boolean) => {
-      if (!isRegex) return new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      if (!isRegex)
+        return new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
       const literal = /^\/(.*)\/([dgimsuvy]*)$/s.exec(pattern);
       return literal ? new RegExp(literal[1], literal[2]) : new RegExp(pattern);
     };
     const checks = (kind: 'required' | 'forbidden') =>
-      row.sourceChecks.filter((check) => check.kind === kind).map((check) => ({ pattern: toRegex(check.pattern, check.isRegex), message: check.message }));
+      row.sourceChecks
+        .filter((check) => check.kind === kind)
+        .map((check) => ({
+          pattern: toRegex(check.pattern, check.isRegex),
+          message: check.message,
+        }));
     const requiredSourceChecks = checks('required');
     const forbiddenSourceChecks = checks('forbidden');
     return row.testCases.map((test) => ({
@@ -477,6 +544,43 @@ export class LearnerCatalogService {
     }));
   }
 
+  async frameworkTests<T = Prisma.JsonValue>(
+    userId: string | null,
+    slug: string,
+  ): Promise<T[]> {
+    const scope = await this.scope(userId);
+    const row = await this.prisma.problem.findFirst({
+      where: {
+        slug,
+        status: 'published',
+        OR: [
+          { organizationId: null },
+          ...(scope.organizationId
+            ? [{ organizationId: scope.organizationId }]
+            : []),
+        ],
+      },
+      select: {
+        testCases: {
+          where: { hidden: true, enabled: true, kind: 'framework' },
+          orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+          select: { id: true, spec: true },
+        },
+      },
+    });
+    if (!row) return [];
+    return row.testCases
+      .filter(
+        (test) =>
+          test.spec !== null &&
+          typeof test.spec === 'object' &&
+          !Array.isArray(test.spec),
+      )
+      .map(
+        (test) => ({ id: test.id, ...(test.spec as Prisma.JsonObject) }) as T,
+      );
+  }
+
   async hiddenTests(userId: string | null, slug: string, language: string) {
     const scope = await this.scope(userId);
     const row = await this.prisma.problem.findFirst({
@@ -485,7 +589,7 @@ export class LearnerCatalogService {
         defaultLanguage: true,
         allowedLanguages: true,
         testCases: {
-          where: { hidden: true, enabled: true },
+          where: { hidden: true, enabled: true, kind: 'io' },
           orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
           select: { input: true, expectedOutput: true },
         },

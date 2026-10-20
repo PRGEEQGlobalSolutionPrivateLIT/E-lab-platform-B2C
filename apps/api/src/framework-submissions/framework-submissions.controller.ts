@@ -1,46 +1,17 @@
-import {
-  Body,
-  Controller,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 
-import {
-  FrameworkSubmissionsService,
-} from './framework-submissions.service.js';
+import { CurrentUser, type AuthenticatedUser } from '../auth/current-user.decorator.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { FrameworkSubmissionsService } from './framework-submissions.service.js';
+import type { FrameworkSubmissionRequest } from './framework-submissions.service.js';
 
-import type {
-  FrameworkSubmissionRequest,
-} from './framework-submissions.service.js';
-
-/* =========================================================
-   FRAMEWORK SUBMISSIONS CONTROLLER
-========================================================= */
-
-@Controller(
-  'framework-submissions',
-)
+@Controller('framework-submissions')
+@UseGuards(JwtAuthGuard)
 export class FrameworkSubmissionsController {
-  constructor(
-    private readonly frameworkSubmissionsService:
-      FrameworkSubmissionsService,
-  ) {}
-
-  /* =======================================================
-     SUBMIT
-
-     POST /api/v1/framework-submissions
-  ======================================================= */
+  constructor(private readonly frameworkSubmissionsService: FrameworkSubmissionsService) {}
 
   @Post()
-  submit(
-    @Body()
-    body:
-      FrameworkSubmissionRequest,
-  ) {
-    return this
-      .frameworkSubmissionsService
-      .submit(
-        body,
-      );
+  submit(@Body() body: FrameworkSubmissionRequest, @CurrentUser() user?: AuthenticatedUser) {
+    return this.frameworkSubmissionsService.submit(body, user?.id ?? null);
   }
 }

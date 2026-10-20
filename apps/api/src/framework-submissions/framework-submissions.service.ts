@@ -1,44 +1,9 @@
 import {
-
   BadGatewayException,
-
   BadRequestException,
-
   Injectable,
-
 } from '@nestjs/common';
-
-
-
-import {
-
-  getExpressTestCases,
-
-} from './express-test-cases.js';
-
-
-
-import {
-
-  getReactTestCases,
-
-} from './react-test-cases.js';
-
-import {
-  getVueTestCases,
-} from './vue-test-cases.js';
-
-
-
-
-
-import {
-
-  getAngularTestCases,
-
-} from './angular-test-cases.js';
-
-
+import { LearnerCatalogService } from '../learner/learner-catalog.service.js';
 
 /* =========================================================
 
@@ -46,322 +11,128 @@ import {
 
 \========================================================= */
 
-
-
 export type FrameworkSubmissionFile = {
-
   path: string;
-
-
 
   language: string;
 
-
-
   content: string;
-
 };
 
-
-
 export type FrameworkSubmissionRequest = {
-
   problemSlug: string;
-
-
 
   runtime: string;
 
-
-
   files: FrameworkSubmissionFile[];
 
-
-
   context?: {
-
     source?: string | null;
-
-
 
     technology?: string | null;
 
-
-
     domain?: string | null;
-
-
 
     stack?: string | null;
 
-
-
     module?: string | null;
-
-
 
     challenge?: string | null;
 
-
-
     attempt?: string | null;
-
   };
-
 };
-
-
 
 /* =========================================================
 
    FRAMEWORK JUDGE TEST RESULT
-
-
-
    EXPRESS:
-
    - statusCode
-
    - expectedStatus
-
    - body
-
    - expectedBody
 
-
-
    REACT / VUE / ANGULAR:
-
    - type
-
    - selector
-
    - value
-
    - expected
-
    - actual
-
    - absentText
 
 \========================================================= */
 
-
-
 type FrameworkJudgeTestResult = {
-
   testNumber?: number;
-
-
-
   passed?: boolean;
-
-
-
   type?: string;
 
-
-
   /* =======================================================
-
      EXPRESS
-
   ======================================================= */
-
-
 
   statusCode?: number;
-
-
-
   expectedStatus?: number;
-
-
-
   body?: unknown;
-
-
-
   expectedBody?: unknown;
 
-
-
   /* =======================================================
-
      REACT
-
   ======================================================= */
-
-
 
   selector?: string;
-
-
-
   value?: string;
-
-
-
   expected?: unknown;
-
-
-
   actual?: unknown;
-
-
-
   absentText?: string;
 
-
-
   /* =======================================================
-
      COMMON
-
   ======================================================= */
-
-
-
   message?: string;
-
 };
 
-
-
 /* =========================================================
-
    FRAMEWORK JUDGE RESPONSE
-
 \========================================================= */
-
-
 
 type FrameworkJudgeResponse = {
-
   problemSlug?: string;
-
-
-
   runtime?: string;
-
-
-
   status?: string;
-
-
-
   output?: string;
-
-
-
   stderr?: string;
-
-
-
   message?: string;
-
-
-
   passedTests?: number;
-
-
-
   totalTests?: number;
-
-
-
-  testResults?:
-
-    FrameworkJudgeTestResult[];
-
-
-
+  testResults?: FrameworkJudgeTestResult[];
   /*
-
    * React Judge may generate these while running
-
    * the submitted component.
-
    */
-
-
-
-  previewHtml?:
-
-    string | null;
-
-
-
-  previewError?:
-
-    string | null;
-
-
-
-  previewUrl?:
-
-    string | null;
-
+  previewHtml?: string | null;
+  previewError?: string | null;
+  previewUrl?: string | null;
 };
 
-
-
 /* =========================================================
-
    SUPPORTED FRAMEWORKS
-
-
-
    Current:
-
    - Express
-
    - React
-
    - Angular
-
 \========================================================= */
 
-
-
-const SUPPORTED_RUNTIMES = [
-
-  'express',
-
-  'react',
-  'vue',
-
-  'angular',
-
-] as const;
-
-
-
-type SupportedFrameworkRuntime =
-
-  (typeof SUPPORTED_RUNTIMES)[number];
-
-
-
+const SUPPORTED_RUNTIMES = ['express', 'react', 'vue', 'angular'] as const;
+type SupportedFrameworkRuntime = (typeof SUPPORTED_RUNTIMES)[number];
 /* =========================================================
-
    SERVICE
-
 \========================================================= */
-
-
 
 @Injectable()
-
 export class FrameworkSubmissionsService {
-
-  private readonly judgeUrl =
-
-    process.env.JUDGE_URL ??
-
-    'http\://127.0.0.1:4100';
-
-
+  private readonly judgeUrl = process.env.JUDGE_URL ?? 'http\://127.0.0.1:4100';
+  constructor(private readonly catalog: LearnerCatalogService) {}
 
   /* =======================================================
 
@@ -369,29 +140,12 @@ export class FrameworkSubmissionsService {
 
   ======================================================= */
 
-
-
-  private normalizeRuntime(
-
-    runtime: string,
-
-  ) {
-
-    return String(
-
-      runtime ??
-
-      '',
-
-    )
-
+  private normalizeRuntime(runtime: string) {
+    return String(runtime ?? '')
       .trim()
 
       .toLowerCase();
-
   }
-
-
 
   /* =======================================================
 
@@ -399,85 +153,32 @@ export class FrameworkSubmissionsService {
 
   ======================================================= */
 
-
-
-  private validateFilePath(
-
-    filePath: string,
-
-  ) {
-
-    if (
-
-      typeof filePath !==
-
-      'string'
-
-    ) {
-
-      throw new BadRequestException(
-
-        'Framework file path is required.',
-
-      );
-
+  private validateFilePath(filePath: string) {
+    if (typeof filePath !== 'string') {
+      throw new BadRequestException('Framework file path is required.');
     }
 
+    const normalized = filePath
 
-
-    const normalized =
-
-      filePath
-
-        .replace(
-
-          /\\/g,
-
-          '/',
-
-        )
-
-        .trim();
-
-
-
-    if (
-
-      !normalized ||
-
-      normalized.startsWith(
+      .replace(
+        /\\/g,
 
         '/',
-
-      ) ||
-
-      normalized ===
-
-        '..' ||
-
-      normalized.includes(
-
-        '../',
-
       )
 
+      .trim();
+
+    if (
+      !normalized ||
+      normalized.startsWith('/') ||
+      normalized === '..' ||
+      normalized.includes('../')
     ) {
-
-      throw new BadRequestException(
-
-        `Invalid framework file path: ${filePath}`,
-
-      );
-
+      throw new BadRequestException(`Invalid framework file path: ${filePath}`);
     }
 
-
-
     return normalized;
-
   }
-
-
 
   /* =======================================================
 
@@ -508,163 +209,34 @@ export class FrameworkSubmissionsService {
      angular-test-cases.ts
 
   ======================================================= */
-
-
-
-  private getHiddenTests(
-
-    runtime:
-
-      SupportedFrameworkRuntime,
-
+  private async getHiddenTests(
+    runtime: SupportedFrameworkRuntime,
     problemSlug: string,
-
+    userId: string | null,
   ) {
-
-    /* =====================================================
-
-       EXPRESS
-
-    ===================================================== */
-
-
-
-    if (
-
-      runtime ===
-
-      'express'
-
-    ) {
-
-      return getExpressTestCases(
-
-        problemSlug,
-
-      );
-
-    }
-
-
-
-    /* =====================================================
-
-       REACT
-
-    ===================================================== */
-
-
-
-    if (
-
-      runtime ===
-
-      'react'
-
-    ) {
-
-      return getReactTestCases(
-
-        problemSlug,
-
-      );
-
-    }
-    /* =====================================================
-       VUE
-    ===================================================== */
-
-    if (
-      runtime ===
-      'vue'
-    ) {
-      return getVueTestCases(
-        problemSlug,
-      );
-    }
-
-
-
-
-    /* =====================================================
-
-       ANGULAR
-
-    ===================================================== */
-
-
-
-    if (
-
-      runtime ===
-
-      'angular'
-
-    ) {
-
-      return getAngularTestCases(
-
-        problemSlug,
-
-      );
-
-    }
-
-
-
-    return [];
-
+    if (!SUPPORTED_RUNTIMES.includes(runtime)) return [];
+    return this.catalog.frameworkTests<Record<string, unknown>>(
+      userId,
+      problemSlug,
+    );
   }
-
-
-
   /* =======================================================
 
      FORMAT TEST RESULT
 
   ======================================================= */
 
-
-
   private formatResult(
-
-    result:
-
-      FrameworkJudgeTestResult,
+    result: FrameworkJudgeTestResult,
 
     index: number,
-
   ) {
-
     return {
+      testNumber: result.testNumber ?? index + 1,
 
-      testNumber:
+      status: result.passed === true ? 'PASSED' : 'FAILED',
 
-        result.testNumber ??
-
-        index + 1,
-
-
-
-      status:
-
-        result.passed ===
-
-        true
-
-          ? 'PASSED'
-
-          : 'FAILED',
-
-
-
-      passed:
-
-        result.passed ===
-
-        true,
-
-
+      passed: result.passed === true,
 
       /* ===================================================
 
@@ -672,13 +244,7 @@ export class FrameworkSubmissionsService {
 
       =================================================== */
 
-
-
-      type:
-
-        result.type,
-
-
+      type: result.type,
 
       /* ===================================================
 
@@ -686,37 +252,15 @@ export class FrameworkSubmissionsService {
 
       =================================================== */
 
+      selector: result.selector,
 
+      value: result.value,
 
-      selector:
+      expected: result.expected,
 
-        result.selector,
+      actual: result.actual,
 
-
-
-      value:
-
-        result.value,
-
-
-
-      expected:
-
-        result.expected,
-
-
-
-      actual:
-
-        result.actual,
-
-
-
-      absentText:
-
-        result.absentText,
-
-
+      absentText: result.absentText,
 
       /* ===================================================
 
@@ -724,31 +268,13 @@ export class FrameworkSubmissionsService {
 
       =================================================== */
 
+      statusCode: result.statusCode,
 
+      expectedStatus: result.expectedStatus,
 
-      statusCode:
+      body: result.body,
 
-        result.statusCode,
-
-
-
-      expectedStatus:
-
-        result.expectedStatus,
-
-
-
-      body:
-
-        result.body,
-
-
-
-      expectedBody:
-
-        result.expectedBody,
-
-
+      expectedBody: result.expectedBody,
 
       /* ===================================================
 
@@ -756,17 +282,9 @@ export class FrameworkSubmissionsService {
 
       =================================================== */
 
-
-
-      message:
-
-        result.message,
-
+      message: result.message,
     };
-
   }
-
-
 
   /* =======================================================
 
@@ -792,43 +310,18 @@ export class FrameworkSubmissionsService {
 
   ======================================================= */
 
-
-
-  async submit(
-
-    body:
-
-      FrameworkSubmissionRequest,
-
-  ) {
-
+  async submit(body: FrameworkSubmissionRequest, userId: string | null = null) {
     /* =====================================================
 
        REQUEST
 
     ===================================================== */
 
-
-
-    if (
-
-      !body ||
-
-      typeof body !==
-
-        'object'
-
-    ) {
-
+    if (!body || typeof body !== 'object') {
       throw new BadRequestException(
-
         'Framework submission request is required.',
-
       );
-
     }
-
-
 
     /* =====================================================
 
@@ -836,37 +329,15 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
-
-
     if (
-
       !body.problemSlug ||
-
-      typeof body.problemSlug !==
-
-        'string' ||
-
+      typeof body.problemSlug !== 'string' ||
       !body.problemSlug.trim()
-
     ) {
-
-      throw new BadRequestException(
-
-        'Problem slug is required.',
-
-      );
-
+      throw new BadRequestException('Problem slug is required.');
     }
 
-
-
-    const problemSlug =
-
-      body.problemSlug
-
-        .trim();
-
-
+    const problemSlug = body.problemSlug.trim();
 
     /* =====================================================
 
@@ -874,79 +345,31 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
-
-
     if (
-
       !body.runtime ||
-
-      typeof body.runtime !==
-
-        'string' ||
-
+      typeof body.runtime !== 'string' ||
       !body.runtime.trim()
-
     ) {
-
-      throw new BadRequestException(
-
-        'Framework runtime is required.',
-
-      );
-
+      throw new BadRequestException('Framework runtime is required.');
     }
 
-
-
-    const normalizedRuntime =
-
-      this.normalizeRuntime(
-
-        body.runtime,
-
-      );
-
-
+    const normalizedRuntime = this.normalizeRuntime(body.runtime);
 
     if (
-
       !SUPPORTED_RUNTIMES.includes(
-
-        normalizedRuntime as
-
-          SupportedFrameworkRuntime,
-
+        normalizedRuntime as SupportedFrameworkRuntime,
       )
-
     ) {
-
       throw new BadRequestException(
-
         [
-
           `Unsupported framework runtime: ${body.runtime}.`,
 
           `Supported runtimes: ${SUPPORTED_RUNTIMES.join(', ')}.`,
-
-        ].join(
-
-          ' ',
-
-        ),
-
+        ].join(' '),
       );
-
     }
 
-
-
-    const runtime =
-
-      normalizedRuntime as
-
-        SupportedFrameworkRuntime;
-
-
+    const runtime = normalizedRuntime as SupportedFrameworkRuntime;
 
     /* =====================================================
 
@@ -954,195 +377,79 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
-
-
-    if (
-
-      !Array.isArray(
-
-        body.files,
-
-      ) ||
-
-      body.files.length ===
-
-        0
-
-    ) {
-
-      throw new BadRequestException(
-
-        'At least one framework file is required.',
-
-      );
-
+    if (!Array.isArray(body.files) || body.files.length === 0) {
+      throw new BadRequestException('At least one framework file is required.');
     }
 
+    const files = body.files.map(
+      (
+        file,
 
-
-    const files =
-
-      body.files.map(
-
-        (
-
-          file,
-
-          index,
-
-        ) => {
-
-          /* -----------------------------------------------
+        index,
+      ) => {
+        /* -----------------------------------------------
 
              FILE OBJECT
 
           ----------------------------------------------- */
 
+        if (!file || typeof file !== 'object') {
+          throw new BadRequestException(`Invalid file at index ${index}.`);
+        }
 
-
-          if (
-
-            !file ||
-
-            typeof file !==
-
-              'object'
-
-          ) {
-
-            throw new BadRequestException(
-
-              `Invalid file at index ${index}.`,
-
-            );
-
-          }
-
-
-
-          /* -----------------------------------------------
+        /* -----------------------------------------------
 
              PATH
 
           ----------------------------------------------- */
 
+        if (typeof file.path !== 'string') {
+          throw new BadRequestException(
+            `File path is required at index ${index}.`,
+          );
+        }
 
+        const filePath = this.validateFilePath(file.path);
 
-          if (
-
-            typeof file.path !==
-
-              'string'
-
-          ) {
-
-            throw new BadRequestException(
-
-              `File path is required at index ${index}.`,
-
-            );
-
-          }
-
-
-
-          const filePath =
-
-            this.validateFilePath(
-
-              file.path,
-
-            );
-
-
-
-          /* -----------------------------------------------
+        /* -----------------------------------------------
 
              LANGUAGE
 
           ----------------------------------------------- */
 
+        if (typeof file.language !== 'string' || !file.language.trim()) {
+          throw new BadRequestException(
+            `File language is required at index ${index}.`,
+          );
+        }
 
+        const language = file.language
 
-          if (
+          .trim()
 
-            typeof file.language !==
+          .toLowerCase();
 
-              'string' ||
-
-            !file.language.trim()
-
-          ) {
-
-            throw new BadRequestException(
-
-              `File language is required at index ${index}.`,
-
-            );
-
-          }
-
-
-
-          const language =
-
-            file.language
-
-              .trim()
-
-              .toLowerCase();
-
-
-
-          /* -----------------------------------------------
+        /* -----------------------------------------------
 
              CONTENT
 
           ----------------------------------------------- */
 
+        if (typeof file.content !== 'string') {
+          throw new BadRequestException(
+            `File content is required at index ${index}.`,
+          );
+        }
 
+        return {
+          path: filePath,
 
-          if (
+          language,
 
-            typeof file.content !==
-
-              'string'
-
-          ) {
-
-            throw new BadRequestException(
-
-              `File content is required at index ${index}.`,
-
-            );
-
-          }
-
-
-
-          return {
-
-            path:
-
-              filePath,
-
-
-
-            language,
-
-
-
-            content:
-
-              file.content,
-
-          };
-
-        },
-
-      );
-
-
+          content: file.content,
+        };
+      },
+    );
 
     /* =====================================================
 
@@ -1150,37 +457,17 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
-
-
-    const tests =
-
-      this.getHiddenTests(
-
+          const tests = await this.getHiddenTests(
         runtime,
-
         problemSlug,
-
+        userId,
       );
 
-
-
-    if (
-
-      tests.length ===
-
-      0
-
-    ) {
-
+    if (tests.length === 0) {
       throw new BadRequestException(
-
         `No framework hidden test cases configured for ${problemSlug}.`,
-
       );
-
     }
-
-
 
     /* =====================================================
 
@@ -1196,57 +483,27 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
-
-
-    let response:
-
-      Response;
-
-
+    let response: Response;
 
     try {
+      response = await fetch(
+        `${this.judgeUrl}/run/framework`,
 
-      response =
+        {
+          method: 'POST',
 
-        await fetch(
+          headers: {
+            'Content-Type': 'application/json',
+          },
 
-          `${this.judgeUrl}/run/framework`,
+          body: JSON.stringify({
+            problemSlug,
 
-          {
+            runtime,
 
-            method:
+            files,
 
-              'POST',
-
-
-
-            headers: {
-
-              'Content-Type':
-
-                'application/json',
-
-            },
-
-
-
-            body:
-
-              JSON.stringify({
-
-                problemSlug,
-
-
-
-                runtime,
-
-
-
-                files,
-
-
-
-                /*
+            /*
 
                  * Hidden tests only originate
 
@@ -1254,13 +511,9 @@ export class FrameworkSubmissionsService {
 
                  */
 
+            tests,
 
-
-                tests,
-
-
-
-                /*
+            /*
 
                  * Context is useful for future
 
@@ -1268,43 +521,21 @@ export class FrameworkSubmissionsService {
 
                  */
 
-
-
-                context:
-
-                  body.context,
-
-              }),
-
-          },
-
-        );
-
-    } catch (
-
-      error
-
-    ) {
-
+            context: body.context,
+          }),
+        },
+      );
+    } catch (error) {
       console.error(
-
         'Unable to connect to framework judge:',
 
         error,
-
       );
-
-
 
       throw new BadGatewayException(
-
         'Unable to connect to the framework judge.',
-
       );
-
     }
-
-
 
     /* =====================================================
 
@@ -1312,47 +543,21 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
-
-
-    let judgeResult:
-
-      FrameworkJudgeResponse;
-
-
+    let judgeResult: FrameworkJudgeResponse;
 
     try {
-
-      judgeResult =
-
-        (await response.json()) as
-
-          FrameworkJudgeResponse;
-
-    } catch (
-
-      error
-
-    ) {
-
+      judgeResult = (await response.json()) as FrameworkJudgeResponse;
+    } catch (error) {
       console.error(
-
         'Unable to parse framework judge response:',
 
         error,
-
       );
-
-
 
       throw new BadGatewayException(
-
         'Invalid response received from framework judge.',
-
       );
-
     }
-
-
 
     /* =====================================================
 
@@ -1360,61 +565,27 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
-
-
-    if (
-
-      !response.ok
-
-    ) {
-
+    if (!response.ok) {
       console.error(
-
         'Framework judge rejected submission:',
 
         {
-
-          httpStatus:
-
-            response.status,
-
-
+          httpStatus: response.status,
 
           problemSlug,
 
-
-
           runtime,
 
+          judgeStatus: judgeResult.status,
 
-
-          judgeStatus:
-
-            judgeResult.status,
-
-
-
-          message:
-
-            judgeResult.message,
-
+          message: judgeResult.message,
         },
-
       );
-
-
 
       throw new BadGatewayException(
-
-        judgeResult.message ??
-
-          'Framework judge rejected the submission.',
-
+        judgeResult.message ?? 'Framework judge rejected the submission.',
       );
-
     }
-
-
 
     /* =====================================================
 
@@ -1422,27 +593,12 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
-
-
-    if (
-
-      judgeResult.status ===
-
-      'INVALID_REQUEST'
-
-    ) {
-
+    if (judgeResult.status === 'INVALID_REQUEST') {
       throw new BadGatewayException(
-
         judgeResult.message ??
-
           'Framework judge rejected the submission request.',
-
       );
-
     }
-
-
 
     /* =====================================================
 
@@ -1450,27 +606,12 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
-
-
-    if (
-
-      judgeResult.status ===
-
-      'UNSUPPORTED_RUNTIME'
-
-    ) {
-
+    if (judgeResult.status === 'UNSUPPORTED_RUNTIME') {
       throw new BadGatewayException(
-
         judgeResult.message ??
-
           `Framework judge does not support runtime: ${runtime}.`,
-
       );
-
     }
-
-
 
     /* =====================================================
 
@@ -1478,27 +619,11 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
-
-
-    if (
-
-      judgeResult.status ===
-
-      'INTERNAL_ERROR'
-
-    ) {
-
+    if (judgeResult.status === 'INTERNAL_ERROR') {
       throw new BadGatewayException(
-
-        judgeResult.message ??
-
-          'Internal framework judge error.',
-
+        judgeResult.message ?? 'Internal framework judge error.',
       );
-
     }
-
-
 
     /* =====================================================
 
@@ -1506,21 +631,9 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
-
-
-    const results =
-
-      Array.isArray(
-
-        judgeResult.testResults,
-
-      )
-
-        ? judgeResult.testResults
-
-        : [];
-
-
+    const results = Array.isArray(judgeResult.testResults)
+      ? judgeResult.testResults
+      : [];
 
     /* =====================================================
 
@@ -1528,43 +641,15 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
-
-
     const passedTests =
-
-      typeof judgeResult.passedTests ===
-
-        'number'
-
+      typeof judgeResult.passedTests === 'number'
         ? judgeResult.passedTests
-
-        : results.filter(
-
-            (
-
-              result,
-
-            ) =>
-
-              result.passed ===
-
-              true,
-
-          ).length;
-
-
+        : results.filter((result) => result.passed === true).length;
 
     const totalTests =
-
-      typeof judgeResult.totalTests ===
-
-        'number'
-
+      typeof judgeResult.totalTests === 'number'
         ? judgeResult.totalTests
-
         : tests.length;
-
-
 
     /* =====================================================
 
@@ -1572,29 +657,8 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
-
-
     const score =
-
-      totalTests > 0
-
-        ? Math.round(
-
-            (
-
-              passedTests /
-
-              totalTests
-
-            ) *
-
-              100,
-
-          )
-
-        : 0;
-
-
+      totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
 
     /* =====================================================
 
@@ -1602,31 +666,18 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
+    const normalizedResults = results.map(
+      (
+        result,
 
-
-    const normalizedResults =
-
-      results.map(
-
-        (
-
+        index,
+      ) =>
+        this.formatResult(
           result,
 
           index,
-
-        ) =>
-
-          this.formatResult(
-
-            result,
-
-            index,
-
-          ),
-
-      );
-
-
+        ),
+    );
 
     /* =====================================================
 
@@ -1640,99 +691,37 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
-
-
     if (
-
-      judgeResult.status ===
-
-        'SERVER_START_ERROR' ||
-
-      judgeResult.status ===
-
-        'RUNTIME_ERROR' ||
-
-      judgeResult.status ===
-
-        'BUILD_ERROR' ||
-
-      judgeResult.status ===
-
-        'TIME_LIMIT_EXCEEDED' ||
-
-      judgeResult.status ===
-
-        'DATABASE_ERROR'
-
+      judgeResult.status === 'SERVER_START_ERROR' ||
+      judgeResult.status === 'RUNTIME_ERROR' ||
+      judgeResult.status === 'BUILD_ERROR' ||
+      judgeResult.status === 'TIME_LIMIT_EXCEEDED' ||
+      judgeResult.status === 'DATABASE_ERROR'
     ) {
-
       return {
-
         problemSlug,
-
-
 
         runtime,
 
-
-
-        status:
-
-          judgeResult.status,
-
-
+        status: judgeResult.status,
 
         passedTests,
 
-
-
         totalTests,
-
-
 
         score,
 
+        results: normalizedResults,
 
+        output: judgeResult.output ?? '',
 
-        results:
+        stderr: judgeResult.stderr ?? '',
 
-          normalizedResults,
+        message: judgeResult.message,
 
-
-
-        output:
-
-          judgeResult.output ??
-
-          '',
-
-
-
-        stderr:
-
-          judgeResult.stderr ??
-
-          '',
-
-
-
-        message:
-
-          judgeResult.message,
-
-
-
-        context:
-
-          body.context ??
-
-          null,
-
+        context: body.context ?? null,
       };
-
     }
-
-
 
     /* =====================================================
 
@@ -1752,23 +741,10 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
-
-
     const allTestsPassed =
-
-      judgeResult.status ===
-
-        'SUCCESS' &&
-
-      totalTests >
-
-        0 &&
-
-      passedTests ===
-
-        totalTests;
-
-
+      judgeResult.status === 'SUCCESS' &&
+      totalTests > 0 &&
+      passedTests === totalTests;
 
     /* =====================================================
 
@@ -1776,83 +752,31 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
-
-
-    if (
-
-      allTestsPassed
-
-    ) {
-
+    if (allTestsPassed) {
       return {
-
         problemSlug,
-
-
 
         runtime,
 
-
-
-        status:
-
-          'ACCEPTED',
-
-
+        status: 'ACCEPTED',
 
         passedTests,
 
-
-
         totalTests,
 
+        score: 100,
 
+        results: normalizedResults,
 
-        score:
+        output: judgeResult.output ?? '',
 
-          100,
+        stderr: judgeResult.stderr ?? '',
 
+        message: judgeResult.message,
 
-
-        results:
-
-          normalizedResults,
-
-
-
-        output:
-
-          judgeResult.output ??
-
-          '',
-
-
-
-        stderr:
-
-          judgeResult.stderr ??
-
-          '',
-
-
-
-        message:
-
-          judgeResult.message,
-
-
-
-        context:
-
-          body.context ??
-
-          null,
-
+        context: body.context ?? null,
       };
-
     }
-
-
 
     /* =====================================================
 
@@ -1860,82 +784,34 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
-
-
     if (
-      judgeResult.status ===
-        'TEST_FAILED' ||
-      judgeResult.status ===
-        'TEST_FAILURE'
+      judgeResult.status === 'TEST_FAILED' ||
+      judgeResult.status === 'TEST_FAILURE'
     ) {
-
       return {
-
         problemSlug,
-
-
 
         runtime,
 
-
-
-        status:
-
-          'WRONG_ANSWER',
-
-
+        status: 'WRONG_ANSWER',
 
         passedTests,
 
-
-
         totalTests,
-
-
 
         score,
 
+        results: normalizedResults,
 
+        output: judgeResult.output ?? '',
 
-        results:
+        stderr: judgeResult.stderr ?? '',
 
-          normalizedResults,
+        message: judgeResult.message,
 
-
-
-        output:
-
-          judgeResult.output ??
-
-          '',
-
-
-
-        stderr:
-
-          judgeResult.stderr ??
-
-          '',
-
-
-
-        message:
-
-          judgeResult.message,
-
-
-
-        context:
-
-          body.context ??
-
-          null,
-
+        context: body.context ?? null,
       };
-
     }
-
-
 
     /* =====================================================
 
@@ -1949,74 +825,30 @@ export class FrameworkSubmissionsService {
 
     ===================================================== */
 
-
-
     return {
-
       problemSlug,
-
-
 
       runtime,
 
-
-
-      status:
-
-        'WRONG_ANSWER',
-
-
+      status: 'WRONG_ANSWER',
 
       passedTests,
 
-
-
       totalTests,
-
-
 
       score,
 
+      results: normalizedResults,
 
+      output: judgeResult.output ?? '',
 
-      results:
-
-        normalizedResults,
-
-
-
-      output:
-
-        judgeResult.output ??
-
-        '',
-
-
-
-      stderr:
-
-        judgeResult.stderr ??
-
-        '',
-
-
+      stderr: judgeResult.stderr ?? '',
 
       message:
-
         judgeResult.message ??
-
         `Framework judge returned status: ${judgeResult.status ?? 'UNKNOWN'}.`,
 
-
-
-      context:
-
-        body.context ??
-
-        null,
-
+      context: body.context ?? null,
     };
-
   }
-
 }
