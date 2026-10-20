@@ -28,6 +28,7 @@ import { AuditService } from './audit/audit.service.js';
 import { ProblemVersioningService } from './problems/problem-versioning.service.js';
 import { ProblemsController } from './problems/problems.controller.js';
 import { ProblemsService } from './problems/problems.service.js';
+import { ProblemPlacementService } from './problems/problem-placement.service.js';
 import { TechnologiesController } from './technologies/technologies.controller.js';
 import { TechnologiesService } from './technologies/technologies.service.js';
 import { TestCasesController } from './test-cases/test-cases.controller.js';
@@ -136,6 +137,7 @@ import { TechSupportService } from './ops/tech-support.service.js';
     ProblemVersioningService,
     TechnologiesService,
     ProblemsService,
+    ProblemPlacementService,
     TestCasesService,
     UsersService,
     LearnersService,

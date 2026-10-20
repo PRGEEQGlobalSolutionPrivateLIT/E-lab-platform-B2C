@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { usePermissionGate, type PermissionRequirement } from "../../permissions/PermissionsProvider";
 import { useTechnologies } from "../../technologies/lib/api";
 import { rememberProblem } from "../../test-cases/api";
@@ -28,6 +28,7 @@ interface Props {
   embedded?: boolean;
   editPermission?: PermissionRequirement;
   transitionPermission?: PermissionRequirement;
+  extra?: ReactNode;
 }
 
 const EMPTY: ProblemInput = {
@@ -66,7 +67,7 @@ function changedFields(before: ProblemInput, after: ProblemInput): Partial<Probl
   return patch;
 }
 
-export default function ProblemForm({ problem, onUpdate, onTransition, basePath = "/problems", apiBase, technologiesPath, readOnly = false, guardConcurrency = false, showTestLinks = true, testsPath = "/test-cases", backLabel = "Back to all problems", embedded = false, editPermission = "problems.manage", transitionPermission = "content.validate" }: Props) {
+export default function ProblemForm({ problem, onUpdate, onTransition, basePath = "/problems", apiBase, technologiesPath, readOnly = false, guardConcurrency = false, showTestLinks = true, testsPath = "/test-cases", backLabel = "Back to all problems", embedded = false, editPermission = "problems.manage", transitionPermission = "content.validate", extra }: Props) {
   const editGate = usePermissionGate(editPermission);
   const transitionGate = usePermissionGate(transitionPermission);
   const router = useRouter();
@@ -346,6 +347,8 @@ export default function ProblemForm({ problem, onUpdate, onTransition, basePath 
           </div>
         </div>
       )}
+
+      {extra}
 
       {problem && problem.nextActions.length > 0 && (
         <div className={cx(styles.card, styles.section)}>

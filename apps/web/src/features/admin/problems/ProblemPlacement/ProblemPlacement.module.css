@@ -1,0 +1,91 @@
+.group {
+  margin-bottom: 24px;
+}
+
+.groupHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+}
+
+.groupTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--ad-bg);
+  box-shadow: var(--ad-inset);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.option input {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  flex-shrink: 0;
+  accent-color: var(--ad-primary);
+}
+
+.optionChecked {
+  box-shadow: var(--ad-raised);
+}
+
+.optionName {
+  display: block;
+  font-weight: 600;
+}
+
+.optionMeta {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ad-muted);
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ad-muted);
+  cursor: pointer;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ok {
+  font-size: 14px;
+  color: var(--ad-success);
+}
+
+.error {
+  font-size: 14px;
+  color: var(--ad-danger);
+}

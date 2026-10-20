@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useProblem } from '@/features/admin/problems/lib/api';
 import ProblemForm from '@/features/admin/problems/ProblemForm/ProblemForm';
+import ProblemPlacement from '@/features/admin/problems/ProblemPlacement/ProblemPlacement';
 import styles from '@/features/admin/problems/ProblemForm/ProblemForm.module.css';
 
 export default function Page() {
@@ -22,5 +23,13 @@ export default function Page() {
     );
   }
 
-  return <ProblemForm key={problem.id} problem={problem} onUpdate={update} onTransition={transition} />;
+    return (
+    <ProblemForm
+      key={problem.id}
+      problem={problem}
+      onUpdate={update}
+      onTransition={transition}
+      extra={<ProblemPlacement problemId={problem.id} published={problem.status === 'published'} />}
+    />
+  );
 }

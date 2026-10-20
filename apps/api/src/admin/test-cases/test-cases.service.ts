@@ -10,13 +10,7 @@ import { AuditService } from '../audit/audit.service.js';
 import type { AdminActor } from '../common/admin-actor.decorator.js';
 import { ProblemVersioningService } from '../problems/problem-versioning.service.js';
 import { frameworkRuntime, normalizeFrameworkSpec } from './framework-spec.js';
-import type {
-  CreateSourceCheckDto,
-  CreateTestCaseDto,
-  ReorderTestCasesDto,
-  UpdateSourceCheckDto,
-  UpdateTestCaseDto,
-} from './test-cases.dto.js';
+import type { CreateSourceCheckDto, CreateTestCaseDto, ReorderTestCasesDto, UpdateSourceCheckDto, UpdateTestCaseDto, } from './test-cases.dto.js';
 
 type Tx = Prisma.TransactionClient;
 

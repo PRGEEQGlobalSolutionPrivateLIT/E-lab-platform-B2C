@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -23,6 +24,8 @@ import {
   UpdateProblemDto,
 } from './problems.dto.js';
 import { ProblemsService } from './problems.service.js';
+import { UpdatePlacementDto } from './problem-placement.dto.js';
+import { ProblemPlacementService } from './problem-placement.service.js';
 import { RequirePermission } from '../access/permission.decorator.js';
 import { PermissionGuard } from '../access/permission.guard.js';
 
@@ -31,7 +34,10 @@ import { PermissionGuard } from '../access/permission.guard.js';
 @Roles('platform-admin', 'super-admin')
 @RequirePermission('content.view', 'problems.manage')
 export class ProblemsController {
-  constructor(private readonly problems: ProblemsService) {}
+    constructor(
+    private readonly problems: ProblemsService,
+    private readonly placement: ProblemPlacementService,
+  ) {}
 
   @Get()
   list(@Query(QueryPipe) query: ProblemQueryDto) {
@@ -41,6 +47,21 @@ export class ProblemsController {
   @Get(':id')
   get(@Param('id') id: string) {
     return this.problems.get(id);
+  }
+
+    @Get(':id/placement')
+  getPlacement(@Param('id') id: string) {
+    return this.placement.get(id);
+  }
+
+  @Put(':id/placement')
+  @Roles('platform-admin')
+  updatePlacement(
+    @Param('id') id: string,
+    @Body() dto: UpdatePlacementDto,
+    @Actor() actor: AdminActor,
+  ) {
+    return this.placement.update(id, dto, actor);
   }
 
   @Get(':id/versions')
