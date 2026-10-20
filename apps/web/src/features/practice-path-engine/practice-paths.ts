@@ -1377,8 +1377,22 @@ export const practicePaths:
       },
     ],
   },
-
-
+  {
+    technologySlug: 'go',
+    name: 'Go Programming',
+    shortName: 'Go',
+    description:
+      'Learn Go from syntax and input/output through conditions, loops, slices, strings, structs and record processing.',
+    stages: [
+      { slug: 'go-fundamentals', title: 'Go Fundamentals', description: 'Start with Go syntax, output, input, variables and arithmetic.', level: 'Beginner', order: 1, problemSlugs: ['go-hello-world', 'go-add-two-numbers'] },
+      { slug: 'go-conditions', title: 'Conditions', description: 'Make decisions with comparisons, modulo and if/else.', level: 'Beginner', order: 2, problemSlugs: ['go-even-odd', 'go-largest-three'] },
+      { slug: 'go-loops', title: 'Loops & Number Processing', description: 'Use for loops and accumulation to process numbers.', level: 'Beginner', order: 3, problemSlugs: ['go-sum-first-n', 'go-factorial'] },
+      { slug: 'go-slices', title: 'Slices', description: 'Store and traverse collections with Go slices.', level: 'Intermediate', order: 4, problemSlugs: ['go-array-sum', 'go-array-maximum'] },
+      { slug: 'go-strings', title: 'Strings & Data Processing', description: 'Work with runes, text and word counting.', level: 'Intermediate', order: 5, problemSlugs: ['go-string-reverse', 'go-word-frequency'] },
+      { slug: 'go-structs', title: 'Structs', description: 'Model data with structs and fields.', level: 'Advanced', order: 6, problemSlugs: ['go-student-struct'] },
+      { slug: 'go-application-patterns', title: 'Go Application Patterns', description: 'Combine structs, slices and loops to process records.', level: 'Advanced', order: 7, problemSlugs: ['go-student-records'] },
+    ],
+  },
 
   /* =======================================================
      SWIFT PROGRAMMING

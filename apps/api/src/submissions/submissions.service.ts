@@ -13,29 +13,7 @@ import {
   DB_JUDGED_LANGUAGES,
   LearnerCatalogService,
 } from '../learner/learner-catalog.service.js';
-import { getCTestCases } from './c-test-cases.js';
-import { getCppTestCases } from './cpp-test-cases.js';
-import { getJavaScriptTestCases } from './javascript-test-cases.js';
-import { getNodeJsTestCases } from './nodejs-test-cases.js';
-import { getTypeScriptTestCases } from './typescript-test-cases.js';
-import { getPythonTestCases } from './python-test-cases.js';
-/* AWS offline Python submission cases */
-import { getAwsTestCases } from './aws-test-cases.js';
-/* Microsoft Azure offline Python submission cases */
-import { getAzureTestCases } from './azure-test-cases.js';
-/* Google Cloud offline Python submission cases */
-import { getGcpTestCases } from './gcp-test-cases.js';
-import { getPythonSparkTestCases } from './python-spark-test-cases.js';
-import { getPythonMachineLearningTestCases } from './python-machine-learning-test-cases.js';
 import { getPythonMachineLearningDataset } from '../ai-ml/python-machine-learning-datasets.js';
-import { getJavaTestCases } from './java-test-cases.js';
-import {
-  getCSharpTestCases,
-  type CSharpHiddenTestCase,
-} from './csharp-test-cases.js';
-import { getPhpTestCases } from './php-test-cases.js';
-import { getRubyTestCases } from './ruby-test-cases.js';
-import { getSwiftTestCases } from './swift-test-cases.js';
 import {
   getNextJsTestCases,
   type NextJsHiddenTestCase,
@@ -57,64 +35,46 @@ import {
   type AspNetCoreHiddenTestCase,
 } from './aspnetcore-test-cases.js';
 import { getFastApiTestCases } from './fastapi-test-cases.js';
-import { getAiMlTestCases } from './ai-ml-test-cases.js';
-/* Generative AI offline Python submission cases */
-import { getGenerativeAiTestCases } from './generative-ai-test-cases.js';
+
 /* =========================================================
    TYPES
 ========================================================= */
 
 export type SubmissionRequest = {
   problemSlug: string;
-
   language: string;
-
   code: string;
-
   files?: Array<{
     path: string;
-
     language: string;
-
     content: string;
   }>;
 
   context?: {
     source?: string;
-
     technology?: string | null;
-
     domain?: string | null;
-
     stack?: string | null;
-
     module?: string | null;
-
     challenge?: string | null;
-
     attempt?: string | null;
   };
 };
 
 type SourceCheck = {
   pattern: RegExp;
-
   message: string;
 };
 
 type HiddenTestCase = {
   input: string;
-
   expectedOutput: string;
-
   requiredSourceChecks?: SourceCheck[];
-
   forbiddenSourceChecks?: SourceCheck[];
 };
 
 type JudgeResponse = {
   language?: string;
-
   status:
     | 'SUCCESS'
     | 'COMPILATION_ERROR'
@@ -126,37 +86,29 @@ type JudgeResponse = {
     | 'INTERNAL_ERROR';
 
   output?: string;
-
   stderr?: string;
-
   exitCode?: number | null;
-
   message?: string;
 };
 
 type FrameworkSubmissionFile = {
   path: string;
-
   language: string;
-
   content: string;
 };
 
 type NextJsValidationResult = {
   passed: boolean;
-
   message?: string;
 };
 
 type NestJsValidationResult = {
   passed: boolean;
-
   message?: string;
 };
 
 type DjangoValidationResult = {
   passed: boolean;
-
   message?: string;
 };
 
@@ -221,6 +173,7 @@ const SUPPORTED_LANGUAGES = [
   'php',
   'ruby',
   'swift',
+  'go',
 ] as const;
 
 /* =========================================================
@@ -404,13 +357,14 @@ export class SubmissionsService implements OnModuleInit {
     ) {
       return 'swift';
     }
-
+    if (normalized === 'go' || normalized === 'golang') {
+      return 'go';
+    }
     return normalized;
   }
 
   /* =======================================================
      NORMALIZE OUTPUT
-
      Avoid failure only because of:
      \n
      \r\n
@@ -431,17 +385,14 @@ export class SubmissionsService implements OnModuleInit {
 
   private matchesSourcePattern(pattern: RegExp, code: string) {
     pattern.lastIndex = 0;
-
     return pattern.test(code);
   }
 
   /* =======================================================
      VALIDATE TYPESCRIPT SOURCE REQUIREMENTS
-
      TypeScript practice problems test both:
      1. Compiled/runtime behaviour.
      2. Required TypeScript language constructs.
-
      For C / C++ / JavaScript / Node.js the arrays below are
      undefined, so this returns null without changing their
      existing submission behaviour.
@@ -452,7 +403,6 @@ export class SubmissionsService implements OnModuleInit {
     testCase: HiddenTestCase,
   ): string | null {
     const requiredChecks = testCase.requiredSourceChecks ?? [];
-
     for (const check of requiredChecks) {
       if (!this.matchesSourcePattern(check.pattern, code)) {
         return check.message;
@@ -480,11 +430,8 @@ export class SubmissionsService implements OnModuleInit {
 
   /* =======================================================
      NEXT.JS PRIMARY FILE
-
      Current learner workspace submits one Monaco value through:
-
      body.code
-
      The Next.js problem bank uses one learner-editable file per
      problem. Hidden test metadata already contains that file path.
 
@@ -2375,188 +2322,7 @@ export class SubmissionsService implements OnModuleInit {
      problemSlug.startsWith('node-')
   ======================================================= */
 
-  private getHiddenTests(
-    language: string,
-    problemSlug: string,
-  ): HiddenTestCase[] {
-    /* =====================================================
-       C
-    ===================================================== */
 
-    if (language === 'c') {
-      return getCTestCases(problemSlug);
-    }
-
-    /* =====================================================
-       C++
-    ===================================================== */
-
-    if (language === 'cpp') {
-      return getCppTestCases(problemSlug);
-    }
-
-    /* =====================================================
-       JAVASCRIPT / NODE.JS
-    ===================================================== */
-
-    if (language === 'javascript') {
-      /*
-       * Node.js problems
-       *
-       * Examples:
-       *
-       * node-word-count
-       * node-path-basename
-       * node-url-hostname
-       */
-
-      if (problemSlug.startsWith('node-')) {
-        return getNodeJsTestCases(problemSlug);
-      }
-
-      /*
-       * Standard JavaScript problems
-       *
-       * Examples:
-       *
-       * javascript-add-two-numbers
-       * javascript-string-reverse
-       */
-
-      return getJavaScriptTestCases(problemSlug);
-    }
-
-    /* =====================================================
-       TYPESCRIPT
-    ===================================================== */
-
-    if (language === 'typescript') {
-      return getTypeScriptTestCases(problemSlug);
-    }
-
-    /* =====================================================
-       PYTHON MACHINE LEARNING
-    ===================================================== */
-
-    if (language === 'python-machine-learning') {
-      return getPythonMachineLearningTestCases(problemSlug);
-    }
-
-    /* =====================================================
-       PYTHON SPARK / PYSPARK
-    ===================================================== */
-
-    if (language === 'pyspark') {
-      return getPythonSparkTestCases(problemSlug);
-    }
-
-    /* =====================================================
-       AWS PRACTICE (PYTHON RUNTIME)
-
-       Resolve AWS tests before generic Python tests.
-       No separate AWS Docker image or judge endpoint needed.
-    ===================================================== */
-
-    if (language === 'python' && problemSlug.startsWith('aws-')) {
-      return getAwsTestCases(problemSlug);
-    }
-
-    /* =====================================================
-       MICROSOFT AZURE PRACTICE (PYTHON RUNTIME)
-
-       Reuse the existing hidden-test grading loop and /run.
-       Azure exercises are offline Python simulations.
-       AWS and all other language lookups remain unchanged.
-    ===================================================== */
-
-    if (language === 'python' && problemSlug.startsWith('azure-')) {
-      return getAzureTestCases(problemSlug);
-    }
-
-    /* =====================================================
-       GOOGLE CLOUD PLATFORM PRACTICE (PYTHON RUNTIME)
-       Use the existing /run judge and hidden-test grading.
-       Existing AWS, Azure and Python routing is preserved.
-    ===================================================== */
-
-    if (language === 'python' && problemSlug.startsWith('gcp-')) {
-      return getGcpTestCases(problemSlug);
-    }
-
-    /* =====================================================
-       AI & MACHINE LEARNING PRACTICE (PYTHON RUNTIME)
-       Keep separate from dataset-based Python ML exercises.
-       Reuse the existing hidden-test grading loop and /run.
-    ===================================================== */
-
-    if (language === 'python' && problemSlug.startsWith('ai-ml-')) {
-      return getAiMlTestCases(problemSlug);
-    }
-
-    /* =====================================================
-       GENERATIVE AI PRACTICE (PYTHON RUNTIME)
-       Reuse the existing hidden-test grading loop and /run.
-       General GenAI practice does not require a model API.
-    ===================================================== */
-
-    if (
-      language === 'python' &&
-      (problemSlug.startsWith('genai-') ||
-        problemSlug.startsWith('generative-ai-'))
-    ) {
-      return getGenerativeAiTestCases(problemSlug);
-    }
-
-    /* =====================================================
-       PYTHON
-    ===================================================== */
-
-    if (language === 'python') {
-      return getPythonTestCases(problemSlug);
-    }
-
-    /* =====================================================
-       JAVA
-    ===================================================== */
-
-    if (language === 'java') {
-      return getJavaTestCases(problemSlug);
-    }
-
-    /* =====================================================
-       C#
-    ===================================================== */
-
-    if (language === 'csharp') {
-      return getCSharpTestCases(problemSlug);
-    }
-
-    /* =====================================================
-       PHP
-    ===================================================== */
-
-    if (language === 'php') {
-      return getPhpTestCases(problemSlug);
-    }
-
-    /* =====================================================
-       RUBY
-    ===================================================== */
-
-    if (language === 'ruby') {
-      return getRubyTestCases(problemSlug);
-    }
-
-    /* =====================================================
-       SWIFT
-    ===================================================== */
-
-    if (language === 'swift') {
-      return getSwiftTestCases(problemSlug);
-    }
-
-    return [];
-  }
 
   /* =======================================================
      ASP.NET CORE PRIMARY FILES
@@ -3727,20 +3493,10 @@ export class SubmissionsService implements OnModuleInit {
   }
 
   private async resolveTests(
-    language: string,
+    _language: string,
     problemSlug: string,
     userId: string | null,
   ): Promise<HiddenTestCase[]> {
-    const fixed = this.getHiddenTests(language, problemSlug);
-    if (
-      fixed.length > 0 ||
-      !(DB_JUDGED_LANGUAGES as readonly string[]).includes(language)
-    )
-      return fixed;
-    const rows = await this.catalog.hiddenTests(userId, problemSlug, language);
-    return rows.map((row) => ({
-      input: row.input ?? '',
-      expectedOutput: row.expectedOutput,
-    }));
+    return this.catalog.judgeTests(userId, problemSlug);
   }
 }

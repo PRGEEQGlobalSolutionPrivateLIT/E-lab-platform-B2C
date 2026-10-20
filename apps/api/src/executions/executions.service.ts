@@ -202,6 +202,7 @@ const SUPPORTED_LANGUAGES = [
   'ruby',
 
   'swift',
+  'go',
 ] as const;
 
 /* =========================================================
@@ -966,6 +967,8 @@ export class ExecutionsService implements OnModuleInit{
       return 'swift';
     }
 
+    if (normalized === 'go' || normalized === 'golang') {
+      return 'go';}
     return normalized;
   }
 

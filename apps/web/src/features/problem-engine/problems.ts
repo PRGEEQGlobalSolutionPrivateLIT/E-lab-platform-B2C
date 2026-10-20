@@ -9,42 +9,34 @@ import type {
 import {
   cProblems,
 } from './c-problems';
-
 import {
   cppProblems,
 } from './cpp-problems';
-
 import {
   javascriptProblems,
 } from './javascript-problems';
-
 import {
   typescriptProblems,
 } from './typescript-problems';
-
 import {
   pythonProblems,
 } from './python-problems';
-
 import {
   javaProblems,
 } from './java-problems';
-
 import {
   csharpProblems,
 } from './csharp-problems';
-
 import {
   phpProblems,
 } from './php-problems';
-
 import {
   rubyProblems,
 } from './ruby-problems';
-
 import {
   swiftProblems,
 } from './swift-problems';
+import { goProblems } from './go-problems';
 
 /* =========================================================
    FRONTEND TECHNOLOGIES
@@ -292,7 +284,7 @@ export const problems:
     ...rubyProblems,
 
     ...swiftProblems,
-
+    ...goProblems,
     /* =====================================================
        FRONTEND TECHNOLOGIES
     ===================================================== */

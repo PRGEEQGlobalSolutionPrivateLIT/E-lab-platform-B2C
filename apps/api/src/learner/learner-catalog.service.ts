@@ -250,6 +250,45 @@ export class LearnerCatalogService {
     };
   }
 
+    async judgeTests(userId: string | null, slug: string) {
+    const scope = await this.scope(userId);
+    const row = await this.prisma.problem.findFirst({
+      where: {
+        slug,
+        status: 'published',
+        OR: [{ organizationId: null }, ...(scope.organizationId ? [{ organizationId: scope.organizationId }] : [])],
+      },
+      select: {
+        testCases: {
+          where: { hidden: true, enabled: true, kind: 'io' },
+          orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+          select: { input: true, expectedOutput: true },
+        },
+        sourceChecks: {
+          where: { enabled: true },
+          orderBy: { createdAt: 'asc' },
+          select: { kind: true, pattern: true, isRegex: true, message: true },
+        },
+      },
+    });
+    if (!row) return [];
+    const toRegex = (pattern: string, isRegex: boolean) => {
+      if (!isRegex) return new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      const literal = /^\/(.*)\/([dgimsuvy]*)$/s.exec(pattern);
+      return literal ? new RegExp(literal[1], literal[2]) : new RegExp(pattern);
+    };
+    const checks = (kind: 'required' | 'forbidden') =>
+      row.sourceChecks.filter((check) => check.kind === kind).map((check) => ({ pattern: toRegex(check.pattern, check.isRegex), message: check.message }));
+    const requiredSourceChecks = checks('required');
+    const forbiddenSourceChecks = checks('forbidden');
+    return row.testCases.map((test) => ({
+      input: test.input ?? '',
+      expectedOutput: test.expectedOutput,
+      requiredSourceChecks,
+      forbiddenSourceChecks,
+    }));
+  }
+
   async hiddenTests(userId: string | null, slug: string, language: string) {
     const scope = await this.scope(userId);
     const row = await this.prisma.problem.findFirst({
