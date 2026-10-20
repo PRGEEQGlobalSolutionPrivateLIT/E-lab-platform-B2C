@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { adminApi, errorText } from '../lib/api';
 import { useTestCaseScope } from './scope';
-import type { CoverageRow, ProblemTestsInfo, TestCaseInput, TestCaseItem } from './types';
+import type { CoverageRow, FrameworkSpec, FrameworkTestInput, FrameworkTestPatch, ProblemTestsInfo, TestCaseInput, TestCaseItem, TestKind } from './types';
 
 const SELECTED_KEY = 'elab_test_case_problem';
 
@@ -11,6 +11,9 @@ export type MutationResult = { ok: true } | { ok: false; error: string };
 
 interface ServerTest {
   id: string;
+  kind: TestKind;
+  spec: FrameworkSpec | null;
+  redacted?: boolean;
   input: string | null;
   expectedOutput: string;
   hidden: boolean;
@@ -105,13 +108,13 @@ export function useProblemTests(problemId: string | null) {
   const reasonBody = (reason?: string) => (reason ? { reason } : {});
 
   const addTest = useCallback(
-    (data: TestCaseInput, reason?: string) =>
+        (data: TestCaseInput | FrameworkTestInput, reason?: string) =>
       run(() => adminApi(`${apiPrefix}/problems/${problemId}/test-cases`, { method: 'POST', body: { ...data, ...reasonBody(reason) } })),
     [problemId, run, apiPrefix],
   );
 
   const updateTest = useCallback(
-    (testId: string, patch: Partial<TestCaseInput>, reason?: string) =>
+        (testId: string, patch: Partial<TestCaseInput> | FrameworkTestPatch, reason?: string) =>
       run(() => adminApi(`${apiPrefix}/test-cases/${testId}`, { method: 'PATCH', body: { ...patch, ...reasonBody(reason) } })),
     [run, apiPrefix],
   );

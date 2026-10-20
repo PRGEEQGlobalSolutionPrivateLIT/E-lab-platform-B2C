@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Eye, EyeOff, FileSearch, LayoutGrid } from "lucide-react";
+import { Blocks, Eye, EyeOff, FileSearch, LayoutGrid } from "lucide-react";
 import { useTestCaseScope } from "../scope";
 import styles from "./TestCaseTabs.module.css";
 
@@ -10,6 +10,7 @@ const TABS = [
   { label: "Overview", path: "", icon: LayoutGrid },
   { label: "Sample Tests", path: "/sample", icon: Eye },
   { label: "Hidden Tests", path: "/hidden", icon: EyeOff },
+  { label: "Framework Tests", path: "/framework", icon: Blocks },
   { label: "Source Checks", path: "/source-checks", icon: FileSearch },
 ] as const;
 

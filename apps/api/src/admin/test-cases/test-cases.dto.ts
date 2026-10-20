@@ -5,6 +5,7 @@ import {
   IsBoolean,
   IsIn,
   IsInt,
+  IsObject,
   IsOptional,
   IsString,
   Length,
@@ -23,13 +24,22 @@ class ReasonFields {
 
 export class CreateTestCaseDto extends ReasonFields {
   @IsOptional()
+  @IsIn(['io', 'framework'])
+  kind?: 'io' | 'framework';
+
+  @IsOptional()
+  @IsObject()
+  spec?: Record<string, unknown>;
+
+  @IsOptional()
   @IsString()
   @MaxLength(100000)
   input?: string;
 
+  @IsOptional()
   @IsString()
   @MaxLength(100000)
-  expectedOutput!: string;
+  expectedOutput?: string;
 
   @IsBoolean()
   hidden!: boolean;

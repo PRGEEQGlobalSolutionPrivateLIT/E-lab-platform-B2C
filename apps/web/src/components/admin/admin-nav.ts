@@ -106,6 +106,7 @@ export const ROLE_CONFIG: Record<AdminRole, RoleConfig> = {
     routes: [
       { href: `${PLATFORM}/problems/create`, permission: "problems.manage" },
       { href: `${PLATFORM}/test-cases/hidden`, permission: "tests.hidden" },
+      { href: `${PLATFORM}/test-cases/framework`, permission: "tests.hidden" },
     ],
     sections: [
       {

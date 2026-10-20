@@ -143,31 +143,21 @@ export class FrameworkSubmissionsService {
   private normalizeRuntime(runtime: string) {
     return String(runtime ?? '')
       .trim()
-
       .toLowerCase();
   }
-
   /* =======================================================
-
      VALIDATE FILE PATH
-
   ======================================================= */
-
   private validateFilePath(filePath: string) {
     if (typeof filePath !== 'string') {
       throw new BadRequestException('Framework file path is required.');
     }
-
     const normalized = filePath
-
       .replace(
         /\\/g,
-
         '/',
       )
-
       .trim();
-
     if (
       !normalized ||
       normalized.startsWith('/') ||
@@ -176,7 +166,6 @@ export class FrameworkSubmissionsService {
     ) {
       throw new BadRequestException(`Invalid framework file path: ${filePath}`);
     }
-
     return normalized;
   }
 

@@ -51,7 +51,7 @@ export function TestCasePage({ visibility }: { visibility: Visibility }) {
   );
   const selected = filtered.find((problem) => problem.id === problemId) ?? filtered[0] ?? null;
   const { tests: allTests, loading, loadError: testsError, needsReason, addTest, updateTest, removeTest } = useProblemTests(selected?.id ?? null);
-  const tests = allTests.filter((test) => test.hidden === isHidden);
+  const tests = allTests.filter((test) => test.kind === 'io' && test.hidden === isHidden);
   const allRevealed = tests.length > 0 && tests.every((test) => revealed.has(test.id));
 
   const selectProblem = (id: string) => {

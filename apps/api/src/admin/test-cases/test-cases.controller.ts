@@ -53,7 +53,7 @@ export class TestCasesController {
     if (granted.has('tests.hidden')) return result;
     return {
       ...result,
-      testCases: result.testCases.map((test) => (test.hidden ? { ...test, input: null, expectedOutput: '', redacted: true } : test)),
+      testCases: result.testCases.map((test) => (test.hidden ? { ...test, input: null, expectedOutput: '', spec: null, redacted: true } : test)),
     };
   }
 
