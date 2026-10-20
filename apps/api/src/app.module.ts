@@ -11,6 +11,7 @@ import { FrameworkSubmissionsModule } from './framework-submissions/framework-su
 import { FrameworkExecutionsModule } from './framework-executions/framework-executions.module.js';
 import { DatabaseLabModule } from './database-lab/database-lab.module.js';
 import { DevOpsLabModule } from './devops-lab/devops-lab.module.js';
+import { PowerBILabModule } from './power-bi-lab/power-bi-lab.module.js';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { DevOpsLabModule } from './devops-lab/devops-lab.module.js';
     FrameworkSubmissionsModule,
     DatabaseLabModule,
     DevOpsLabModule,
+    PowerBILabModule,
     LearnerModule,
     AdminModule,
   ],

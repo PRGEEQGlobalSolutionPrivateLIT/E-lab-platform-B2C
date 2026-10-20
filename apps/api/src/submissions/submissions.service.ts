@@ -4,79 +4,62 @@ import {
   Injectable,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import type { RunRecord } from '../judge/judge-gateway.service.js';
+import type { OnModuleInit } from '@nestjs/common';
+import {
+  JudgeGateway,
+  type RunRecord,
+} from '../judge/judge-gateway.service.js';
+import {
+  DB_JUDGED_LANGUAGES,
+  LearnerCatalogService,
+} from '../learner/learner-catalog.service.js';
 import { getCTestCases } from './c-test-cases.js';
-
 import { getCppTestCases } from './cpp-test-cases.js';
-
 import { getJavaScriptTestCases } from './javascript-test-cases.js';
-
 import { getNodeJsTestCases } from './nodejs-test-cases.js';
-
 import { getTypeScriptTestCases } from './typescript-test-cases.js';
-
 import { getPythonTestCases } from './python-test-cases.js';
-
 /* AWS offline Python submission cases */
 import { getAwsTestCases } from './aws-test-cases.js';
-
 /* Microsoft Azure offline Python submission cases */
 import { getAzureTestCases } from './azure-test-cases.js';
-
 /* Google Cloud offline Python submission cases */
 import { getGcpTestCases } from './gcp-test-cases.js';
-
 import { getPythonSparkTestCases } from './python-spark-test-cases.js';
-
 import { getPythonMachineLearningTestCases } from './python-machine-learning-test-cases.js';
-
 import { getPythonMachineLearningDataset } from '../ai-ml/python-machine-learning-datasets.js';
-
 import { getJavaTestCases } from './java-test-cases.js';
-
 import {
   getCSharpTestCases,
   type CSharpHiddenTestCase,
 } from './csharp-test-cases.js';
-
 import { getPhpTestCases } from './php-test-cases.js';
-
 import { getRubyTestCases } from './ruby-test-cases.js';
-
 import { getSwiftTestCases } from './swift-test-cases.js';
-
 import {
   getNextJsTestCases,
   type NextJsHiddenTestCase,
 } from './nextjs-test-cases.js';
-
 import {
   getNestJsTestCases,
   type NestJsHiddenTestCase,
 } from './nestjs-test-cases.js';
-
 import {
   getDjangoTestCases,
   type DjangoHiddenTestCase,
 } from './django-test-cases.js';
-
 import {
   getSpringBootTestCases,
   type SpringBootHiddenTestCase,
 } from './springboot-test-cases.js';
-
 import {
   getAspNetCoreTestCases,
   type AspNetCoreHiddenTestCase,
 } from './aspnetcore-test-cases.js';
-
 import { getFastApiTestCases } from './fastapi-test-cases.js';
-
 import { getAiMlTestCases } from './ai-ml-test-cases.js';
-
 /* Generative AI offline Python submission cases */
 import { getGenerativeAiTestCases } from './generative-ai-test-cases.js';
-
 /* =========================================================
    TYPES
 ========================================================= */
@@ -245,7 +228,7 @@ const SUPPORTED_LANGUAGES = [
 ========================================================= */
 
 @Injectable()
-export class SubmissionsService {
+export class SubmissionsService implements OnModuleInit {
   private readonly judgeUrl = process.env.JUDGE_URL ?? 'http://127.0.0.1:4100';
 
   /* =======================================================
@@ -3112,7 +3095,10 @@ export class SubmissionsService {
      SUBMIT
   ======================================================= */
 
-  async submit(body: SubmissionRequest) {
+  private async evaluate(
+    body: SubmissionRequest,
+    userId: string | null = null,
+  ) {
     /* =====================================================
        VALIDATE PROBLEM
     ===================================================== */
@@ -3257,7 +3243,11 @@ export class SubmissionsService {
        GET HIDDEN TEST CASES
     ===================================================== */
 
-    const testCases = this.getHiddenTests(language, body.problemSlug);
+    const testCases = await this.resolveTests(
+      language,
+      body.problemSlug,
+      userId,
+    );
 
     if (testCases.length === 0) {
       throw new BadRequestException(
@@ -3616,35 +3606,141 @@ export class SubmissionsService {
 
     return {
       problemSlug: body.problemSlug,
-
       language,
-
       status: allTestsPassed ? 'ACCEPTED' : 'WRONG_ANSWER',
-
       passedTests,
-
       totalTests,
-
       score,
-
       results,
-
       context: body.context,
     };
   }
 
+  constructor(
+    private readonly gateway: JudgeGateway,
+    private readonly catalog: LearnerCatalogService,
+  ) {}
+
+  onModuleInit() {
+    this.gateway.register('submit', async (job) => {
+      const body = (job.payload as SubmissionRequest | undefined) ?? {
+        problemSlug: job.problemSlug,
+        language: job.language,
+        code: job.code,
+      };
+      const result = await this.evaluate(body, job.userId ?? null);
+      return { response: result, record: this.toRecord(result) };
+    });
+  }
+
+  async submit(body: SubmissionRequest, userId: string | null = null) {
+    const { response } = await this.gateway.execute({
+      kind: 'submit',
+      userId,
+      problemSlug: String(body.problemSlug ?? '').trim(),
+      language: String(body.language ?? '')
+        .trim()
+        .toLowerCase(),
+      workspaceType: '',
+      code: String(body.code ?? ''),
+      payload: body,
+    });
+    return response;
+  }
+
   async rejudge(
-    _run: {
+    run: {
       id: string;
       userId: string | null;
       problemSlug: string;
       language: string;
       code: string;
     },
-    _rejudgeJobId: string,
+    rejudgeJobId: string,
   ): Promise<RunRecord> {
-    throw new ServiceUnavailableException(
-      'Rejudge is unavailable until the judge integration is wired.',
-    );
+    const { response } = await this.gateway.execute({
+      kind: 'submit',
+      userId: run.userId,
+      problemSlug: run.problemSlug,
+      language: run.language,
+      workspaceType: '',
+      code: run.code,
+      rejudgeJobId,
+      rejudgeOfId: run.id,
+    });
+    return this.toRecord(response);
+  }
+
+  private toRecord(value: unknown): RunRecord {
+    const result = (value ?? {}) as {
+      status?: string;
+      passedTests?: number;
+      totalTests?: number;
+      results?: Array<{
+        testNumber?: number;
+        passed?: boolean;
+        status?: string;
+        output?: string;
+        expectedOutput?: string;
+        stderr?: string;
+      }>;
+    };
+    const verdicts: Record<string, string> = {
+      ACCEPTED: 'ac',
+      WRONG_ANSWER: 'wa',
+      TIME_LIMIT_EXCEEDED: 'tle',
+      RUNTIME_ERROR: 're',
+      COMPILATION_ERROR: 'ce',
+    };
+    const outcomes: Record<string, string> = {
+      ac: 'ok',
+      wa: 'wrong',
+      tle: 'tle',
+      re: 're',
+      ce: 'ce',
+    };
+    const verdict = verdicts[result.status ?? ''] ?? 'wa';
+    const items = result.results ?? [];
+    return {
+      outcome: outcomes[verdict] ?? 'wrong',
+      verdict,
+      testsPassed: result.passedTests ?? null,
+      testsTotal: result.totalTests ?? null,
+      stdout: items
+        .map((item) => item.output)
+        .filter(Boolean)
+        .join('\n')
+        .slice(0, 2000),
+      stderr: items
+        .map((item) => item.stderr)
+        .filter(Boolean)
+        .join('\n')
+        .slice(0, 2000),
+      results: items.map((item) => ({
+        testNumber: item.testNumber,
+        passed: item.passed,
+        status: item.status,
+        output: (item.output ?? '').slice(0, 500),
+        expectedOutput: (item.expectedOutput ?? '').slice(0, 500),
+      })),
+    };
+  }
+
+  private async resolveTests(
+    language: string,
+    problemSlug: string,
+    userId: string | null,
+  ): Promise<HiddenTestCase[]> {
+    const fixed = this.getHiddenTests(language, problemSlug);
+    if (
+      fixed.length > 0 ||
+      !(DB_JUDGED_LANGUAGES as readonly string[]).includes(language)
+    )
+      return fixed;
+    const rows = await this.catalog.hiddenTests(userId, problemSlug, language);
+    return rows.map((row) => ({
+      input: row.input ?? '',
+      expectedOutput: row.expectedOutput,
+    }));
   }
 }

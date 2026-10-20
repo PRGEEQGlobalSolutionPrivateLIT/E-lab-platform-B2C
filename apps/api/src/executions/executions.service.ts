@@ -1,15 +1,12 @@
 import {
-
   BadGatewayException,
-
   BadRequestException,
-
   Injectable,
-
 } from '@nestjs/common';
 
 import getPythonAnalyticsDataset from '../data-analytics/python-analytics-datasets.js';
-
+import type { OnModuleInit } from '@nestjs/common';
+import { JudgeGateway, type RunRecord } from '../judge/judge-gateway.service.js';
 import getPythonMachineLearningDataset from '../ai-ml/python-machine-learning-datasets.js';
 
 /* =========================================================
@@ -19,7 +16,6 @@ import getPythonMachineLearningDataset from '../ai-ml/python-machine-learning-da
 ========================================================= */
 
 export type ExecutionRequest = {
-
   problemSlug: string;
 
   language: string;
@@ -53,17 +49,14 @@ export type ExecutionRequest = {
    */
 
   files?: Array<{
-
     path: string;
 
     language: string;
 
     content: string;
-
   }>;
 
   tests?: Array<{
-
     id?: string;
 
     method?: string;
@@ -77,11 +70,9 @@ export type ExecutionRequest = {
     body?: string;
 
     callable?: string;
-
   }>;
 
   context?: {
-
     source?: string;
 
     technology?: string | null;
@@ -95,9 +86,7 @@ export type ExecutionRequest = {
     challenge?: string | null;
 
     attempt?: string | null;
-
   };
-
 };
 
 /* =========================================================
@@ -107,7 +96,6 @@ export type ExecutionRequest = {
 ========================================================= */
 
 type JudgeResponse = {
-
   language?: string;
 
   runtime?: string;
@@ -115,21 +103,13 @@ type JudgeResponse = {
   problemSlug?: string;
 
   status:
-
     | 'SUCCESS'
-
     | 'COMPILATION_ERROR'
-
     | 'RUNTIME_ERROR'
-
     | 'TIME_LIMIT_EXCEEDED'
-
     | 'UNSUPPORTED_LANGUAGE'
-
     | 'UNSUPPORTED_RUNTIME'
-
     | 'INVALID_REQUEST'
-
     | 'INTERNAL_ERROR';
 
   output?: string;
@@ -151,7 +131,6 @@ type JudgeResponse = {
   totalTests?: number;
 
   tests?: Array<{
-
     id?: string;
 
     method?: string;
@@ -169,9 +148,7 @@ type JudgeResponse = {
     expectedOutput?: string;
 
     actualOutput?: string;
-
   }>;
-
 };
 
 /* =========================================================
@@ -201,7 +178,6 @@ type JudgeResponse = {
 ========================================================= */
 
 const SUPPORTED_LANGUAGES = [
-
   'c',
 
   'cpp',
@@ -226,7 +202,6 @@ const SUPPORTED_LANGUAGES = [
   'ruby',
 
   'swift',
-
 ] as const;
 
 /* =========================================================
@@ -235,9 +210,7 @@ const SUPPORTED_LANGUAGES = [
 
 ========================================================= */
 
-type SupportedLanguage =
-
-  (typeof SUPPORTED_LANGUAGES)[number];
+type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
 /* =========================================================
 
@@ -254,7 +227,6 @@ type SupportedLanguage =
 ========================================================= */
 
 const SUPPORTED_FRAMEWORK_RUNTIMES = [
-
   'express',
 
   'react',
@@ -274,7 +246,6 @@ const SUPPORTED_FRAMEWORK_RUNTIMES = [
   'springboot',
 
   'aspnetcore',
-
 ] as const;
 
 /* =========================================================
@@ -283,9 +254,7 @@ const SUPPORTED_FRAMEWORK_RUNTIMES = [
 
 ========================================================= */
 
-type SupportedFrameworkRuntime =
-
-  (typeof SUPPORTED_FRAMEWORK_RUNTIMES)[number];
+type SupportedFrameworkRuntime = (typeof SUPPORTED_FRAMEWORK_RUNTIMES)[number];
 
 /* =========================================================
 
@@ -301,59 +270,31 @@ type SupportedFrameworkRuntime =
 
 ========================================================= */
 
-const NEXTJS_PROBLEM_FILE_PATHS:
+const NEXTJS_PROBLEM_FILE_PATHS: Record<string, string> = {
+  'nextjs-page-component': 'app/page.tsx',
 
-  Record<string, string> = {
+  'nextjs-root-layout': 'app/layout.tsx',
 
-    'nextjs-page-component':
+  'nextjs-navigation': 'app/page.tsx',
 
-      'app/page.tsx',
+  'nextjs-dynamic-route': 'app/courses/[courseId]/page.tsx',
 
-    'nextjs-root-layout':
+  'nextjs-server-component': 'app/courses/page.tsx',
 
-      'app/layout.tsx',
+  'nextjs-client-component': 'app/counter/page.tsx',
 
-    'nextjs-navigation':
+  'nextjs-search-params': 'app/search/page.tsx',
 
-      'app/page.tsx',
+  'nextjs-route-handler': 'app/api/health/route.ts',
 
-    'nextjs-dynamic-route':
+  'nextjs-data-fetching': 'app/courses/page.tsx',
 
-      'app/courses/[courseId]/page.tsx',
+  'nextjs-form-action': 'app/courses/new/page.tsx',
 
-    'nextjs-server-component':
+  'nextjs-api-integration': 'app/users/page.tsx',
 
-      'app/courses/page.tsx',
-
-    'nextjs-client-component':
-
-      'app/counter/page.tsx',
-
-    'nextjs-search-params':
-
-      'app/search/page.tsx',
-
-    'nextjs-route-handler':
-
-      'app/api/health/route.ts',
-
-    'nextjs-data-fetching':
-
-      'app/courses/page.tsx',
-
-    'nextjs-form-action':
-
-      'app/courses/new/page.tsx',
-
-    'nextjs-api-integration':
-
-      'app/users/page.tsx',
-
-    'nextjs-dashboard':
-
-      'app/dashboard/page.tsx',
-
-  };
+  'nextjs-dashboard': 'app/dashboard/page.tsx',
+};
 
 /* =========================================================
 
@@ -371,59 +312,31 @@ const NEXTJS_PROBLEM_FILE_PATHS:
 
 ========================================================= */
 
-const NESTJS_PROBLEM_FILE_PATHS:
+const NESTJS_PROBLEM_FILE_PATHS: Record<string, string> = {
+  'nestjs-basic-controller': 'src/app.controller.ts',
 
-  Record<string, string> = {
+  'nestjs-get-route': 'src/courses.controller.ts',
 
-    'nestjs-basic-controller':
+  'nestjs-post-route': 'src/users.controller.ts',
 
-      'src/app.controller.ts',
+  'nestjs-route-params': 'src/courses.controller.ts',
 
-    'nestjs-get-route':
+  'nestjs-query-params': 'src/search.controller.ts',
 
-      'src/courses.controller.ts',
+  'nestjs-service': 'src/courses.service.ts',
 
-    'nestjs-post-route':
+  'nestjs-dependency-injection': 'src/courses.controller.ts',
 
-      'src/users.controller.ts',
+  'nestjs-create-dto': 'src/courses.controller.ts',
 
-    'nestjs-route-params':
+  'nestjs-validation': 'src/create-user.dto.ts',
 
-      'src/courses.controller.ts',
+  'nestjs-module': 'src/courses.module.ts',
 
-    'nestjs-query-params':
+  'nestjs-users-api': 'src/users.controller.ts',
 
-      'src/search.controller.ts',
-
-    'nestjs-service':
-
-      'src/courses.service.ts',
-
-    'nestjs-dependency-injection':
-
-      'src/courses.controller.ts',
-
-    'nestjs-create-dto':
-
-      'src/courses.controller.ts',
-
-    'nestjs-validation':
-
-      'src/create-user.dto.ts',
-
-    'nestjs-module':
-
-      'src/courses.module.ts',
-
-    'nestjs-users-api':
-
-      'src/users.controller.ts',
-
-    'nestjs-course-management-api':
-
-      'src/courses.controller.ts',
-
-  };
+  'nestjs-course-management-api': 'src/courses.controller.ts',
+};
 
 /* =========================================================
 
@@ -439,59 +352,31 @@ const NESTJS_PROBLEM_FILE_PATHS:
 
 ========================================================= */
 
-const DJANGO_PROBLEM_FILE_PATHS:
+const DJANGO_PROBLEM_FILE_PATHS: Record<string, string> = {
+  'django-basic-view': 'app/views.py',
 
-  Record<string, string> = {
+  'django-url-route': 'app/urls.py',
 
-    'django-basic-view':
+  'django-template-context': 'app/views.py',
 
-      'app/views.py',
+  'django-dynamic-route': 'app/urls.py',
 
-    'django-url-route':
+  'django-post-request': 'app/views.py',
 
-      'app/urls.py',
+  'django-course-model': 'app/models.py',
 
-    'django-template-context':
+  'django-queryset-filter': 'app/services.py',
 
-      'app/views.py',
+  'django-create-record': 'app/services.py',
 
-    'django-dynamic-route':
+  'django-json-response': 'app/views.py',
 
-      'app/urls.py',
+  'django-class-based-view': 'app/views.py',
 
-    'django-post-request':
+  'django-course-list-api': 'app/views.py',
 
-      'app/views.py',
-
-    'django-course-model':
-
-      'app/models.py',
-
-    'django-queryset-filter':
-
-      'app/services.py',
-
-    'django-create-record':
-
-      'app/services.py',
-
-    'django-json-response':
-
-      'app/views.py',
-
-    'django-class-based-view':
-
-      'app/views.py',
-
-    'django-course-list-api':
-
-      'app/views.py',
-
-    'django-course-management':
-
-      'app/views.py',
-
-  };
+  'django-course-management': 'app/views.py',
+};
 
 /* =========================================================
 
@@ -499,35 +384,20 @@ const DJANGO_PROBLEM_FILE_PATHS:
 
 ========================================================= */
 
-const FASTAPI_PROBLEM_FILE_PATHS:
-
-  Record<string, string> = {
-
-    'fastapi-hello-world': 'main.py',
-
-    'fastapi-path-parameter': 'main.py',
-
-    'fastapi-query-parameter': 'main.py',
-
-    'fastapi-post-endpoint': 'main.py',
-
-    'fastapi-request-body': 'main.py',
-
-    'fastapi-response-model': 'main.py',
-
-    'fastapi-validation': 'main.py',
-
-    'fastapi-dependency-injection': 'main.py',
-
-    'fastapi-error-handling': 'main.py',
-
-    'fastapi-crud-api': 'main.py',
-
-    'fastapi-middleware': 'main.py',
-
-    'fastapi-inventory-api': 'main.py',
-
-  };
+const FASTAPI_PROBLEM_FILE_PATHS: Record<string, string> = {
+  'fastapi-hello-world': 'main.py',
+  'fastapi-path-parameter': 'main.py',
+  'fastapi-query-parameter': 'main.py',
+  'fastapi-post-endpoint': 'main.py',
+  'fastapi-request-body': 'main.py',
+  'fastapi-response-model': 'main.py',
+  'fastapi-validation': 'main.py',
+  'fastapi-dependency-injection': 'main.py',
+  'fastapi-error-handling': 'main.py',
+  'fastapi-crud-api': 'main.py',
+  'fastapi-middleware': 'main.py',
+  'fastapi-inventory-api': 'main.py',
+};
 
 /* =========================================================
 
@@ -535,29 +405,17 @@ const FASTAPI_PROBLEM_FILE_PATHS:
 
 ========================================================= */
 
-const FASTAPI_RUN_TESTS:
-
-  Record<string, FrameworkHttpTest[]> = {
-
-    'fastapi-hello-world': [
-
-      {
-
-        id: 'test-1',
-
-        method: 'GET',
-
-        path: '/',
-
-        expectedStatus: 200,
-
-        expectedOutput: 'Hello, World!',
-
-      },
-
-    ],
-
-  };
+const FASTAPI_RUN_TESTS: Record<string, FrameworkHttpTest[]> = {
+  'fastapi-hello-world': [
+    {
+      id: 'test-1',
+      method: 'GET',
+      path: '/',
+      expectedStatus: 200,
+      expectedOutput: 'Hello, World!',
+    },
+  ],
+};
 
 /* =========================================================
 
@@ -569,15 +427,10 @@ const FASTAPI_RUN_TESTS:
 
 ========================================================= */
 
-const SPRINGBOOT_PROBLEM_FILE_PATHS:
-
-  Record<string, string> = {
-
-    'springboot-hello-controller':
-
-      'src/main/java/com/elab/app/HelloController.java',
-
-  };
+const SPRINGBOOT_PROBLEM_FILE_PATHS: Record<string, string> = {
+  'springboot-hello-controller':
+    'src/main/java/com/elab/app/HelloController.java',
+};
 
 /* =========================================================
 
@@ -589,35 +442,31 @@ const SPRINGBOOT_PROBLEM_FILE_PATHS:
 
 ========================================================= */
 
-const ASPNETCORE_PROBLEM_FILE_PATHS:
+const ASPNETCORE_PROBLEM_FILE_PATHS: Record<string, string> = {
+  'aspnetcore-hello-api': 'Program.cs',
 
-  Record<string, string> = {
+  'aspnetcore-routing': 'Program.cs',
 
-    'aspnetcore-hello-api': 'Program.cs',
+  'aspnetcore-route-parameter': 'Program.cs',
 
-    'aspnetcore-routing': 'Program.cs',
+  'aspnetcore-query-parameter': 'Program.cs',
 
-    'aspnetcore-route-parameter': 'Program.cs',
+  'aspnetcore-post-endpoint': 'Program.cs',
 
-    'aspnetcore-query-parameter': 'Program.cs',
+  'aspnetcore-model-binding': 'Program.cs',
 
-    'aspnetcore-post-endpoint': 'Program.cs',
+  'aspnetcore-service': 'Program.cs',
 
-    'aspnetcore-model-binding': 'Program.cs',
+  'aspnetcore-dependency-injection': 'Program.cs',
 
-    'aspnetcore-service': 'Program.cs',
+  'aspnetcore-validation': 'Program.cs',
 
-    'aspnetcore-dependency-injection': 'Program.cs',
+  'aspnetcore-crud-api': 'Program.cs',
 
-    'aspnetcore-validation': 'Program.cs',
+  'aspnetcore-middleware': 'Program.cs',
 
-    'aspnetcore-crud-api': 'Program.cs',
-
-    'aspnetcore-middleware': 'Program.cs',
-
-    'aspnetcore-product-api': 'Program.cs',
-
-  };
+  'aspnetcore-product-api': 'Program.cs',
+};
 
 /* =========================================================
 
@@ -636,7 +485,6 @@ const ASPNETCORE_PROBLEM_FILE_PATHS:
 ========================================================= */
 
 type FrameworkHttpTest = {
-
   id?: string;
 
   method?: string;
@@ -650,190 +498,137 @@ type FrameworkHttpTest = {
   body?: string;
 
   callable?: string;
-
 };
 
-const DJANGO_RUN_TESTS:
+const DJANGO_RUN_TESTS: Record<string, FrameworkHttpTest[]> = {
+  'django-basic-view': [
+    {
+      id: 'test-1',
 
-  Record<string, FrameworkHttpTest[]> = {
+      callable: 'app.views.home',
 
-    'django-basic-view': [
+      expectedStatus: 200,
 
-      {
+      expectedOutput: 'Welcome to Django',
+    },
+  ],
+};
 
-        id: 'test-1',
+const SPRINGBOOT_RUN_TESTS: Record<string, FrameworkHttpTest[]> = {
+  'springboot-hello-controller': [
+    {
+      id: 'test-1',
 
-        callable: 'app.views.home',
+      method: 'GET',
 
-        expectedStatus: 200,
+      path: '/hello',
 
-        expectedOutput:
+      expectedStatus: 200,
 
-          'Welcome to Django',
+      expectedOutput: 'Hello, World!',
+    },
+  ],
+};
 
-      },
+const ASPNETCORE_RUN_TESTS: Record<string, FrameworkHttpTest[]> = {
+  'aspnetcore-hello-api': [
+    {
+      id: 'test-1',
 
-    ],
+      method: 'GET',
 
-  };
+      path: '/hello',
 
-const SPRINGBOOT_RUN_TESTS:
+      expectedStatus: 200,
 
-  Record<string, FrameworkHttpTest[]> = {
+      expectedOutput: 'Hello, World!',
+    },
+  ],
 
-    'springboot-hello-controller': [
+  'aspnetcore-routing': [
+    {
+      id: 'test-1',
 
-      {
+      method: 'GET',
 
-        id: 'test-1',
+      path: '/api/status',
 
-        method: 'GET',
+      expectedStatus: 200,
 
-        path: '/hello',
+      expectedOutput: 'OK',
+    },
+  ],
 
-        expectedStatus: 200,
+  'aspnetcore-route-parameter': [
+    {
+      id: 'test-1',
 
-        expectedOutput:
+      method: 'GET',
 
-          'Hello, World!',
+      path: '/hello/Asha',
 
-      },
+      expectedStatus: 200,
 
-    ],
+      expectedOutput: 'Hello, Asha!',
+    },
+  ],
 
-  };
+  'aspnetcore-query-parameter': [
+    {
+      id: 'test-1',
 
-const ASPNETCORE_RUN_TESTS:
+      method: 'GET',
 
-  Record<string, FrameworkHttpTest[]> = {
+      path: '/greet?name=Ravi',
 
-    'aspnetcore-hello-api': [
+      expectedStatus: 200,
 
-      {
+      expectedOutput: 'Welcome, Ravi!',
+    },
+  ],
 
-        id: 'test-1',
+  'aspnetcore-service': [
+    {
+      id: 'test-1',
 
-        method: 'GET',
+      method: 'GET',
 
-        path: '/hello',
+      path: '/service',
 
-        expectedStatus: 200,
+      expectedStatus: 200,
 
-        expectedOutput: 'Hello, World!',
+      expectedOutput: 'Hello from Service!',
+    },
+  ],
 
-      },
+  'aspnetcore-dependency-injection': [
+    {
+      id: 'test-1',
 
-    ],
+      method: 'GET',
 
-    'aspnetcore-routing': [
+      path: '/di',
 
-      {
+      expectedStatus: 200,
 
-        id: 'test-1',
+      expectedOutput: 'Dependency Injection Works!',
+    },
+  ],
 
-        method: 'GET',
+  'aspnetcore-middleware': [
+    {
+      id: 'test-1',
 
-        path: '/api/status',
+      method: 'GET',
 
-        expectedStatus: 200,
+      path: '/check',
 
-        expectedOutput: 'OK',
+      expectedStatus: 200,
 
-      },
-
-    ],
-
-    'aspnetcore-route-parameter': [
-
-      {
-
-        id: 'test-1',
-
-        method: 'GET',
-
-        path: '/hello/Asha',
-
-        expectedStatus: 200,
-
-        expectedOutput: 'Hello, Asha!',
-
-      },
-
-    ],
-
-    'aspnetcore-query-parameter': [
-
-      {
-
-        id: 'test-1',
-
-        method: 'GET',
-
-        path: '/greet?name=Ravi',
-
-        expectedStatus: 200,
-
-        expectedOutput: 'Welcome, Ravi!',
-
-      },
-
-    ],
-
-    'aspnetcore-service': [
-
-      {
-
-        id: 'test-1',
-
-        method: 'GET',
-
-        path: '/service',
-
-        expectedStatus: 200,
-
-        expectedOutput: 'Hello from Service!',
-
-      },
-
-    ],
-
-    'aspnetcore-dependency-injection': [
-
-      {
-
-        id: 'test-1',
-
-        method: 'GET',
-
-        path: '/di',
-
-        expectedStatus: 200,
-
-        expectedOutput: 'Dependency Injection Works!',
-
-      },
-
-    ],
-
-    'aspnetcore-middleware': [
-
-      {
-
-        id: 'test-1',
-
-        method: 'GET',
-
-        path: '/check',
-
-        expectedStatus: 200,
-
-        expectedOutput: 'Middleware Works!',
-
-      },
-
-    ],
-
-  };
+      expectedOutput: 'Middleware Works!',
+    },
+  ],
+};
 
 /* =========================================================
    AWS PRACTICE - PUBLIC RUN INPUT
@@ -841,8 +636,7 @@ const ASPNETCORE_RUN_TESTS:
    Other languages and problems keep their original input handling.
    Hidden grading cases remain inside the judge, not this file.
 ========================================================= */
-const AWS_REGION_SAMPLE_INPUT =
-  'ap-south-1,us-east-1,eu-west-1\nap-south-1\n';
+const AWS_REGION_SAMPLE_INPUT = 'ap-south-1,us-east-1,eu-west-1\nap-south-1\n';
 
 /* =========================================================
    AZURE PRACTICE - PUBLIC RUN INPUT
@@ -898,9 +692,7 @@ export type AwsPracticeGrade = {
 ========================================================= */
 
 @Injectable()
-
-export class ExecutionsService {
-
+export class ExecutionsService implements OnModuleInit{
   /* =======================================================
 
      JUDGE URL
@@ -915,11 +707,7 @@ export class ExecutionsService {
 
   ======================================================= */
 
-  private readonly judgeUrl =
-
-    process.env.JUDGE_URL ??
-
-    'http://127.0.0.1:4100';
+  private readonly judgeUrl = process.env.JUDGE_URL ?? 'http://127.0.0.1:4100';
 
   /* =======================================================
 
@@ -927,19 +715,12 @@ export class ExecutionsService {
 
   ======================================================= */
 
-  private normalizeLanguage(
+  private normalizeLanguage(language: string): string {
+    const normalized = language
 
-    language: string,
+      .trim()
 
-  ): string {
-
-    const normalized =
-
-      language
-
-        .trim()
-
-        .toLowerCase();
+      .toLowerCase();
 
     /* Azure offline practice uses the existing Python judge. */
     if (normalized === 'azure' || normalized === 'azure-python') {
@@ -982,18 +763,8 @@ export class ExecutionsService {
 
     ===================================================== */
 
-    if (
-
-      normalized === 'c++' ||
-
-      normalized ===
-
-        'cplusplus'
-
-    ) {
-
+    if (normalized === 'c++' || normalized === 'cplusplus') {
       return 'cpp';
-
     }
 
     /* =====================================================
@@ -1009,25 +780,12 @@ export class ExecutionsService {
     ===================================================== */
 
     if (
-
       normalized === 'js' ||
-
-      normalized ===
-
-        'node' ||
-
-      normalized ===
-
-        'nodejs' ||
-
-      normalized ===
-
-        'node.js'
-
+      normalized === 'node' ||
+      normalized === 'nodejs' ||
+      normalized === 'node.js'
     ) {
-
       return 'javascript';
-
     }
 
     /* =====================================================
@@ -1043,21 +801,11 @@ export class ExecutionsService {
     ===================================================== */
 
     if (
-
       normalized === 'ts' ||
-
-      normalized ===
-
-        'typescript' ||
-
-      normalized ===
-
-        'type-script'
-
+      normalized === 'typescript' ||
+      normalized === 'type-script'
     ) {
-
       return 'typescript';
-
     }
 
     /* =====================================================
@@ -1073,21 +821,11 @@ export class ExecutionsService {
     ===================================================== */
 
     if (
-
       normalized === 'py' ||
-
-      normalized ===
-
-        'python3' ||
-
-      normalized ===
-
-        'python-3'
-
+      normalized === 'python3' ||
+      normalized === 'python-3'
     ) {
-
       return 'python';
-
     }
 
     /* =====================================================
@@ -1101,17 +839,11 @@ export class ExecutionsService {
     ===================================================== */
 
     if (
-
       normalized === 'python-data-analytics' ||
-
       normalized === 'python-analytics' ||
-
       normalized === 'data-analytics-python'
-
     ) {
-
       return 'python-data-analytics';
-
     }
 
     /* =====================================================
@@ -1125,19 +857,12 @@ export class ExecutionsService {
     ===================================================== */
 
     if (
-
       normalized === 'python-machine-learning' ||
-
       normalized === 'python-ml' ||
-
       normalized === 'machine-learning-python' ||
-
       normalized === 'python-machinelearning'
-
     ) {
-
       return 'python-machine-learning';
-
     }
 
     /* =====================================================
@@ -1164,18 +889,8 @@ export class ExecutionsService {
 
     ===================================================== */
 
-    if (
-
-      normalized === 'java' ||
-
-      normalized ===
-
-        'jdk'
-
-    ) {
-
+    if (normalized === 'java' || normalized === 'jdk') {
       return 'java';
-
     }
 
     /* =====================================================
@@ -1191,19 +906,12 @@ export class ExecutionsService {
     ===================================================== */
 
     if (
-
       normalized === 'csharp' ||
-
       normalized === 'c#' ||
-
       normalized === 'cs' ||
-
       normalized === 'c-sharp'
-
     ) {
-
       return 'csharp';
-
     }
 
     /* =====================================================
@@ -1219,35 +927,21 @@ export class ExecutionsService {
     ===================================================== */
 
     if (
-
       normalized === 'php' ||
-
       normalized === 'php8' ||
-
       normalized === 'php-8' ||
-
       normalized === 'php8.3'
-
     ) {
-
       return 'php';
-
     }
 
     if (
-
       normalized === 'ruby' ||
-
       normalized === 'rb' ||
-
       normalized === 'ruby3' ||
-
       normalized === 'ruby-3'
-
     ) {
-
       return 'ruby';
-
     }
 
     /* =====================================================
@@ -1263,25 +957,16 @@ export class ExecutionsService {
     ===================================================== */
 
     if (
-
       normalized === 'swift' ||
-
       normalized === 'swift5' ||
-
       normalized === 'swift-5' ||
-
       normalized === 'swift6' ||
-
       normalized === 'swift-6'
-
     ) {
-
       return 'swift';
-
     }
 
     return normalized;
-
   }
 
   /* =======================================================
@@ -1290,38 +975,18 @@ export class ExecutionsService {
 
   ======================================================= */
 
-  private normalizeFrameworkName(
-
-    value:
-
-      | string
-
-      | null
-
-      | undefined,
-
-  ): string {
-
-    return (
-
-      value ??
-
-      ''
-
-    )
+  private normalizeFrameworkName(value: string | null | undefined): string {
+    return (value ?? '')
 
       .trim()
 
       .toLowerCase()
 
       .replace(
-
         /\s+/g,
 
         '',
-
       );
-
   }
 
   /* =======================================================
@@ -1330,22 +995,8 @@ export class ExecutionsService {
 
   ======================================================= */
 
-  private isSupportedLanguage(
-
-    language: string,
-
-  ): language is SupportedLanguage {
-
-    return (
-
-      SUPPORTED_LANGUAGES as readonly string[]
-
-    ).includes(
-
-      language,
-
-    );
-
+  private isSupportedLanguage(language: string): language is SupportedLanguage {
+    return (SUPPORTED_LANGUAGES as readonly string[]).includes(language);
   }
 
   /* =======================================================
@@ -1355,21 +1006,11 @@ export class ExecutionsService {
   ======================================================= */
 
   private isSupportedFrameworkRuntime(
-
     runtime: string,
-
   ): runtime is SupportedFrameworkRuntime {
-
-    return (
-
-      SUPPORTED_FRAMEWORK_RUNTIMES as readonly string[]
-
-    ).includes(
-
+    return (SUPPORTED_FRAMEWORK_RUNTIMES as readonly string[]).includes(
       runtime,
-
     );
-
   }
 
   /* =======================================================
@@ -1395,59 +1036,21 @@ export class ExecutionsService {
   ======================================================= */
 
   private resolveFrameworkRuntime(
-
     body: ExecutionRequest,
+  ): SupportedFrameworkRuntime | null {
+    const technology = this.normalizeFrameworkName(body.context?.technology);
 
-  ):
+    const moduleName = this.normalizeFrameworkName(body.context?.module);
 
-    | SupportedFrameworkRuntime
+    const problemSlug = body.problemSlug
 
-    | null {
+      .trim()
 
-    const technology =
+      .toLowerCase();
 
-      this.normalizeFrameworkName(
+    const candidates = [technology, moduleName];
 
-        body.context
-
-          ?.technology,
-
-      );
-
-    const moduleName =
-
-      this.normalizeFrameworkName(
-
-        body.context
-
-          ?.module,
-
-      );
-
-    const problemSlug =
-
-      body.problemSlug
-
-        .trim()
-
-        .toLowerCase();
-
-    const candidates = [
-
-      technology,
-
-      moduleName,
-
-    ];
-
-    for (
-
-      const candidate of
-
-      candidates
-
-    ) {
-
+    for (const candidate of candidates) {
       /* ===================================================
 
          EXPRESS
@@ -1455,23 +1058,11 @@ export class ExecutionsService {
       =================================================== */
 
       if (
-
-        candidate ===
-
-          'express' ||
-
-        candidate ===
-
-          'expressjs' ||
-
-        candidate ===
-
-          'express.js'
-
+        candidate === 'express' ||
+        candidate === 'expressjs' ||
+        candidate === 'express.js'
       ) {
-
         return 'express';
-
       }
 
       /* ===================================================
@@ -1481,43 +1072,19 @@ export class ExecutionsService {
       =================================================== */
 
       if (
-
-        candidate ===
-
-          'react' ||
-
-        candidate ===
-
-          'reactjs' ||
-
-        candidate ===
-
-          'react.js'
-
+        candidate === 'react' ||
+        candidate === 'reactjs' ||
+        candidate === 'react.js'
       ) {
-
         return 'react';
-
       }
 
       if (
-
-        candidate ===
-
-          'vue' ||
-
-        candidate ===
-
-          'vuejs' ||
-
-        candidate ===
-
-          'vue.js'
-
+        candidate === 'vue' ||
+        candidate === 'vuejs' ||
+        candidate === 'vue.js'
       ) {
-
         return 'vue';
-
       }
 
       /* ===================================================
@@ -1526,20 +1093,8 @@ export class ExecutionsService {
 
       =================================================== */
 
-      if (
-
-        candidate ===
-
-          'angular' ||
-
-        candidate ===
-
-          'angularjs'
-
-      ) {
-
+      if (candidate === 'angular' || candidate === 'angularjs') {
         return 'angular';
-
       }
 
       /* ===================================================
@@ -1549,23 +1104,11 @@ export class ExecutionsService {
       =================================================== */
 
       if (
-
-        candidate ===
-
-          'nextjs' ||
-
-        candidate ===
-
-          'next.js' ||
-
-        candidate ===
-
-          'next'
-
+        candidate === 'nextjs' ||
+        candidate === 'next.js' ||
+        candidate === 'next'
       ) {
-
         return 'nextjs';
-
       }
 
       /* ===================================================
@@ -1575,23 +1118,11 @@ export class ExecutionsService {
       =================================================== */
 
       if (
-
-        candidate ===
-
-          'nestjs' ||
-
-        candidate ===
-
-          'nest.js' ||
-
-        candidate ===
-
-          'nest'
-
+        candidate === 'nestjs' ||
+        candidate === 'nest.js' ||
+        candidate === 'nest'
       ) {
-
         return 'nestjs';
-
       }
 
       /* ===================================================
@@ -1600,16 +1131,8 @@ export class ExecutionsService {
 
       =================================================== */
 
-      if (
-
-        candidate ===
-
-          'django'
-
-      ) {
-
+      if (candidate === 'django') {
         return 'django';
-
       }
 
       /* ===================================================
@@ -1619,19 +1142,12 @@ export class ExecutionsService {
       =================================================== */
 
       if (
-
         candidate === 'fastapi' ||
-
         candidate === 'fast-api' ||
-
         candidate === 'fast.api' ||
-
         candidate === 'fastapiframework'
-
       ) {
-
         return 'fastapi';
-
       }
 
       /* ===================================================
@@ -1641,853 +1157,318 @@ export class ExecutionsService {
       =================================================== */
 
       if (
-
-        candidate ===
-
-          'springboot' ||
-
-        candidate ===
-
-          'spring-boot' ||
-
-        candidate ===
-
-          'spring' ||
-
-        candidate ===
-
-          'springbootframework'
-
+        candidate === 'springboot' ||
+        candidate === 'spring-boot' ||
+        candidate === 'spring' ||
+        candidate === 'springbootframework'
       ) {
-
         return 'springboot';
-
       }
 
       /* ===================================================
-
          ASP.NET CORE
-
       =================================================== */
 
       if (
-
         candidate === 'aspnetcore' ||
-
         candidate === 'asp.netcore' ||
-
         candidate === 'asp.net-core' ||
-
         candidate === 'aspnet-core' ||
-
         candidate === 'dotnetweb'
-
       ) {
-
         return 'aspnetcore';
-
       }
-
     }
 
     /* =====================================================
-
        FALL BACK TO PROBLEM SLUG
-
        This is especially important when the workspace was
-
        opened directly and context.technology is absent.
-
     ===================================================== */
 
-    if (
-
-      problemSlug.startsWith(
-
-        'express-',
-
-      )
-
-    ) {
-
+    if (problemSlug.startsWith('express-')) {
       return 'express';
-
     }
 
-    if (
-
-      problemSlug.startsWith(
-
-        'react-',
-
-      )
-
-    ) {
-
+    if (problemSlug.startsWith('react-')) {
       return 'react';
-
     }
 
-    if (
-
-      problemSlug.startsWith(
-
-        'vue-',
-
-      )
-
-    ) {
-
+    if (problemSlug.startsWith('vue-')) {
       return 'vue';
-
     }
 
-    if (
-
-      problemSlug.startsWith(
-
-        'angular-',
-
-      )
-
-    ) {
-
+    if (problemSlug.startsWith('angular-')) {
       return 'angular';
-
     }
 
-    if (
-
-      problemSlug.startsWith(
-
-        'nextjs-',
-
-      )
-
-    ) {
-
+    if (problemSlug.startsWith('nextjs-')) {
       return 'nextjs';
-
     }
 
-    if (
-
-      problemSlug.startsWith(
-
-        'nestjs-',
-
-      )
-
-    ) {
-
+    if (problemSlug.startsWith('nestjs-')) {
       return 'nestjs';
-
     }
 
-    if (
-
-      problemSlug.startsWith(
-
-        'django-',
-
-      )
-
-    ) {
-
+    if (problemSlug.startsWith('django-')) {
       return 'django';
-
     }
 
     if (
-
-      problemSlug.startsWith(
-
-        'fastapi-',
-
-      ) ||
-
-      problemSlug.startsWith(
-
-        'fast-api-',
-
-      )
-
+      problemSlug.startsWith('fastapi-') ||
+      problemSlug.startsWith('fast-api-')
     ) {
-
       return 'fastapi';
-
     }
 
     if (
-
-      problemSlug.startsWith(
-
-        'springboot-',
-
-      ) ||
-
-      problemSlug.startsWith(
-
-        'spring-boot-',
-
-      )
-
+      problemSlug.startsWith('springboot-') ||
+      problemSlug.startsWith('spring-boot-')
     ) {
-
       return 'springboot';
-
     }
 
     if (
-
-      problemSlug.startsWith(
-
-        'aspnetcore-',
-
-      ) ||
-
-      problemSlug.startsWith(
-
-        'aspnet-core-',
-
-      )
-
+      problemSlug.startsWith('aspnetcore-') ||
+      problemSlug.startsWith('aspnet-core-')
     ) {
-
       return 'aspnetcore';
-
     }
 
     return null;
-
   }
 
   /* =======================================================
-
      GET FRAMEWORK FILE PATH
-
      The shared editor still holds one `code` value.
-
      This method maps that value to the file path expected by
-
      the appropriate framework runtime.
-
   ======================================================= */
 
   private getFrameworkFilePath(
-
-    runtime:
-
-      SupportedFrameworkRuntime,
-
-    problemSlug:
-
-      string,
-
+    runtime: SupportedFrameworkRuntime,
+    problemSlug: string,
   ): string {
-
     /* =====================================================
-
        NEXT.JS
-
        Next.js App Router file paths depend on the problem.
-
     ===================================================== */
 
-    if (
+    if (runtime === 'nextjs') {
+      const filePath = NEXTJS_PROBLEM_FILE_PATHS[problemSlug];
 
-      runtime ===
-
-      'nextjs'
-
-    ) {
-
-      const filePath =
-
-        NEXTJS_PROBLEM_FILE_PATHS[
-
-          problemSlug
-
-        ];
-
-      if (
-
-        !filePath
-
-      ) {
-
+      if (!filePath) {
         throw new BadRequestException(
-
           `No Next.js workspace file mapping exists for problem: ${problemSlug}.`,
-
         );
-
       }
 
       return filePath;
-
     }
 
     /* =====================================================
-
        NESTJS
-
        Prefer body.files for multi-file NestJS exercises.
-
        This mapping is the primary-file fallback for the
-
        shared single-editor payload.
-
     ===================================================== */
 
-    if (
+    if (runtime === 'nestjs') {
+      const filePath = NESTJS_PROBLEM_FILE_PATHS[problemSlug];
 
-      runtime ===
-
-      'nestjs'
-
-    ) {
-
-      const filePath =
-
-        NESTJS_PROBLEM_FILE_PATHS[
-
-          problemSlug
-
-        ];
-
-      if (
-
-        !filePath
-
-      ) {
-
+      if (!filePath) {
         throw new BadRequestException(
-
           `No NestJS workspace file mapping exists for problem: ${problemSlug}.`,
-
         );
-
       }
 
       return filePath;
-
     }
 
     /* =====================================================
-
        FASTAPI
-
     ===================================================== */
 
-    if (
-
-      runtime === 'fastapi'
-
-    ) {
-
-      return (
-
-        FASTAPI_PROBLEM_FILE_PATHS[problemSlug] ??
-
-        'main.py'
-
-      );
-
+    if (runtime === 'fastapi') {
+      return FASTAPI_PROBLEM_FILE_PATHS[problemSlug] ?? 'main.py';
     }
 
     /* =====================================================
-
        DJANGO
-
        Django starter files differ by problem.
-
     ===================================================== */
 
-    if (
+    if (runtime === 'django') {
+      const filePath = DJANGO_PROBLEM_FILE_PATHS[problemSlug];
 
-      runtime ===
-
-      'django'
-
-    ) {
-
-      const filePath =
-
-        DJANGO_PROBLEM_FILE_PATHS[
-
-          problemSlug
-
-        ];
-
-      if (
-
-        !filePath
-
-      ) {
-
+      if (!filePath) {
         throw new BadRequestException(
-
           `No Django workspace file mapping exists for problem: ${problemSlug}.`,
-
         );
-
       }
 
       return filePath;
-
     }
 
     /* =====================================================
-
        SPRING BOOT
-
        Prefer body.files for future multi-file exercises.
-
        This mapping is the primary-file fallback for the
-
        shared single-editor payload.
-
     ===================================================== */
 
-    if (
+    if (runtime === 'springboot') {
+      const filePath = SPRINGBOOT_PROBLEM_FILE_PATHS[problemSlug];
 
-      runtime ===
-
-      'springboot'
-
-    ) {
-
-      const filePath =
-
-        SPRINGBOOT_PROBLEM_FILE_PATHS[
-
-          problemSlug
-
-        ];
-
-      if (
-
-        !filePath
-
-      ) {
-
+      if (!filePath) {
         throw new BadRequestException(
-
           `No Spring Boot workspace file mapping exists for problem: ${problemSlug}.`,
-
         );
-
       }
 
       return filePath;
-
     }
 
     /* =====================================================
-
        ASP.NET CORE
-
     ===================================================== */
 
-    if (
+    if (runtime === 'aspnetcore') {
+      const filePath = ASPNETCORE_PROBLEM_FILE_PATHS[problemSlug];
 
-      runtime ===
-
-      'aspnetcore'
-
-    ) {
-
-      const filePath =
-
-        ASPNETCORE_PROBLEM_FILE_PATHS[
-
-          problemSlug
-
-        ];
-
-      if (
-
-        !filePath
-
-      ) {
-
+      if (!filePath) {
         throw new BadRequestException(
-
           `No ASP.NET Core workspace file mapping exists for problem: ${problemSlug}.`,
-
         );
-
       }
-
       return filePath;
-
     }
 
     /* =====================================================
-
        EXPRESS
-
     ===================================================== */
 
-    if (
-
-      runtime ===
-
-      'express'
-
-    ) {
-
+    if (runtime === 'express') {
       return 'server.js';
-
     }
 
     /* =====================================================
-
        REACT
-
     ===================================================== */
 
-    if (
-
-      runtime ===
-
-      'react'
-
-    ) {
-
+    if (runtime === 'react') {
       return 'App.jsx';
-
     }
 
-    if (
-
-      runtime ===
-
-      'vue'
-
-    ) {
-
+    if (runtime === 'vue') {
       return 'src/App.vue';
-
     }
 
     /* =====================================================
-
        ANGULAR
-
     ===================================================== */
-
     return 'app.component.ts';
-
   }
 
   /* =======================================================
-
      GET FRAMEWORK FILE LANGUAGE
-
   ======================================================= */
 
   private getFrameworkFileLanguage(
-
-    runtime:
-
-      SupportedFrameworkRuntime,
-
-    language:
-
-      string,
-
+    runtime: SupportedFrameworkRuntime,
+    language: string,
   ): string {
-
-    if (
-
-      runtime ===
-
-        'nextjs' ||
-
-      runtime ===
-
-        'angular' ||
-
-      runtime ===
-
-        'nestjs'
-
-    ) {
-
+    if (runtime === 'nextjs' || runtime === 'angular' || runtime === 'nestjs') {
       return 'typescript';
-
     }
 
-    if (
-
-      runtime ===
-
-        'react' ||
-
-      runtime ===
-
-        'vue' ||
-
-      runtime ===
-
-        'express'
-
-    ) {
-
+    if (runtime === 'react' || runtime === 'vue' || runtime === 'express') {
       return 'javascript';
-
     }
 
-    if (
-
-      runtime === 'django' ||
-
-      runtime === 'fastapi'
-
-    ) {
-
+    if (runtime === 'django' || runtime === 'fastapi') {
       return 'python';
-
     }
 
-    if (
-
-      runtime ===
-
-        'springboot'
-
-    ) {
-
+    if (runtime === 'springboot') {
       return 'java';
-
     }
 
-    if (
-
-      runtime ===
-
-        'aspnetcore'
-
-    ) {
-
+    if (runtime === 'aspnetcore') {
       return 'csharp';
-
     }
-
     return language;
-
   }
 
   /* =======================================================
-
      BUILD FRAMEWORK FILES
-
      Prefer body.files when supplied.
-
      Otherwise convert the single Monaco `code` value into the
-
      framework file expected by the Judge.
 
   ======================================================= */
-
   private buildFrameworkFiles(
-
-    body:
-
-      ExecutionRequest,
-
-    runtime:
-
-      SupportedFrameworkRuntime,
-
-    language:
-
-      string,
-
+    body: ExecutionRequest,
+    runtime: SupportedFrameworkRuntime,
+    language: string,
   ) {
-
-    if (
-
-      Array.isArray(
-
-        body.files,
-
-      ) &&
-
-      body.files.length >
-
-        0
-
-    ) {
-
+    if (Array.isArray(body.files) && body.files.length > 0) {
       return body.files;
-
     }
 
     return [
-
       {
+        path: this.getFrameworkFilePath(runtime, body.problemSlug),
 
-        path:
-
-          this.getFrameworkFilePath(
-
-            runtime,
-
-            body.problemSlug,
-
-          ),
-
-        language:
-
-          this.getFrameworkFileLanguage(
-
-            runtime,
-
-            language,
-
-          ),
-
-        content:
-
-          body.code,
-
+        language: this.getFrameworkFileLanguage(runtime, language),
+        content: body.code,
       },
-
     ];
-
   }
 
   /* =======================================================
-
      GET FRAMEWORK RUN TESTS
-
   ======================================================= */
-
   private getFrameworkRunTests(
-
     body: ExecutionRequest,
-
-    runtime:
-
-      SupportedFrameworkRuntime,
-
+    runtime: SupportedFrameworkRuntime,
   ): FrameworkHttpTest[] {
-
     /*
-
      * If the caller explicitly supplied tests, preserve them.
-
      * This also keeps the execution endpoint ready for future
-
      * framework exercises that provide their own visible tests.
-
      */
 
-    if (
-
-      Array.isArray(body.tests) &&
-
-      body.tests.length > 0
-
-    ) {
-
+    if (Array.isArray(body.tests) && body.tests.length > 0) {
       return body.tests;
-
     }
 
     /*
-
      * Spring Boot requires HTTP tests during Run. Without these,
-
      * springboot-runner.mjs intentionally returns only:
-
      *
-
      *   Build successful.
-
      *
-
      * Map each Spring Boot problem to its Run tests here.
-
      */
 
-    if (
-
-      runtime === 'django'
-
-    ) {
-
-      return (
-
-        DJANGO_RUN_TESTS[
-
-          body.problemSlug
-
-        ] ?? []
-
-      );
-
+    if (runtime === 'django') {
+      return DJANGO_RUN_TESTS[body.problemSlug] ?? [];
     }
 
-    if (
-
-      runtime === 'fastapi'
-
-    ) {
-
-      return (
-
-        FASTAPI_RUN_TESTS[
-
-          body.problemSlug
-
-        ] ?? []
-
-      );
-
+    if (runtime === 'fastapi') {
+      return FASTAPI_RUN_TESTS[body.problemSlug] ?? [];
     }
 
-    if (
-
-      runtime === 'springboot'
-
-    ) {
-
-      return (
-
-        SPRINGBOOT_RUN_TESTS[
-
-          body.problemSlug
-
-        ] ?? []
-
-      );
-
+    if (runtime === 'springboot') {
+      return SPRINGBOOT_RUN_TESTS[body.problemSlug] ?? [];
     }
 
-    if (
-
-      runtime === 'aspnetcore'
-
-    ) {
-
-      return (
-
-        ASPNETCORE_RUN_TESTS[
-
-          body.problemSlug
-
-        ] ?? []
-
-      );
-
+    if (runtime === 'aspnetcore') {
+      return ASPNETCORE_RUN_TESTS[body.problemSlug] ?? [];
     }
 
     return [];
-
   }
 
   /* =======================================================
@@ -2496,58 +1477,29 @@ export class ExecutionsService {
 
   ======================================================= */
 
-  private async parseJudgeResponse(
-
-    response:
-
-      Response,
-
-  ): Promise<JudgeResponse> {
-
+  private async parseJudgeResponse(response: Response): Promise<JudgeResponse> {
     try {
-
-      return (
-
-        await response.json()
-
-      ) as JudgeResponse;
-
+      return (await response.json()) as JudgeResponse;
     } catch {
-
       throw new BadGatewayException(
-
         'Invalid response received from code judge.',
-
       );
-
     }
-
   }
 
   /* =======================================================
-
      RUN NORMAL CODE
-
      Endpoint:
-
      POST /run
-
   ======================================================= */
 
   private async runCode({
-
     body,
-
     language,
-
   }: {
-
     body: ExecutionRequest;
-
     language: SupportedLanguage;
-
   }) {
-
     /* =====================================================
 
        PYTHON DATA ANALYTICS DATASET
@@ -2555,27 +1507,14 @@ export class ExecutionsService {
     ===================================================== */
 
     const analyticsDataset =
-
       language === 'python-data-analytics'
-
         ? getPythonAnalyticsDataset(body.problemSlug)
-
         : undefined;
 
-    if (
-
-      language === 'python-data-analytics' &&
-
-      !analyticsDataset
-
-    ) {
-
+    if (language === 'python-data-analytics' && !analyticsDataset) {
       throw new BadRequestException(
-
         `No Python Data Analytics dataset is configured for problem: ${body.problemSlug}.`,
-
       );
-
     }
 
     /* =====================================================
@@ -2585,27 +1524,14 @@ export class ExecutionsService {
     ===================================================== */
 
     const machineLearningDataset =
-
       language === 'python-machine-learning'
-
         ? getPythonMachineLearningDataset(body.problemSlug)
-
         : undefined;
 
-    if (
-
-      language === 'python-machine-learning' &&
-
-      !machineLearningDataset
-
-    ) {
-
+    if (language === 'python-machine-learning' && !machineLearningDataset) {
       throw new BadRequestException(
-
         `No Python Machine Learning dataset is configured for problem: ${body.problemSlug}.`,
-
       );
-
     }
 
     /* =====================================================
@@ -2615,15 +1541,10 @@ export class ExecutionsService {
     ===================================================== */
 
     const executionDataset =
-
       language === 'python-data-analytics'
-
         ? analyticsDataset
-
         : language === 'python-machine-learning'
-
           ? machineLearningDataset
-
           : undefined;
 
     /* =====================================================
@@ -2633,39 +1554,27 @@ export class ExecutionsService {
     ===================================================== */
 
     const judgePayload = executionDataset
-
       ? {
-
           language,
-
           code: body.code,
-
           input: body.input ?? '',
-
           dataset: executionDataset.content,
-
           datasetFileName: executionDataset.fileName,
-
         }
-
       : {
-
           language,
-
           code: body.code,
-
           input:
             body.problemSlug === 'gcp-validate-region' &&
             (!body.input || !body.input.trim())
               ? GCP_REGION_SAMPLE_INPUT
               : body.problemSlug === 'azure-validate-region' &&
-            (!body.input || !body.input.trim())
-              ? AZURE_REGION_SAMPLE_INPUT
-              : body.problemSlug === 'aws-validate-region' &&
                   (!body.input || !body.input.trim())
-                ? AWS_REGION_SAMPLE_INPUT
-                : body.input ?? '',
-
+                ? AZURE_REGION_SAMPLE_INPUT
+                : body.problemSlug === 'aws-validate-region' &&
+                    (!body.input || !body.input.trim())
+                  ? AWS_REGION_SAMPLE_INPUT
+                  : (body.input ?? ''),
         };
 
     /* =====================================================
@@ -2675,17 +1584,13 @@ export class ExecutionsService {
     ===================================================== */
 
     const response = await fetch(`${this.judgeUrl}/run`, {
-
       method: 'POST',
 
       headers: {
-
         'Content-Type': 'application/json',
-
       },
 
       body: JSON.stringify(judgePayload),
-
     });
 
     /* =====================================================
@@ -2697,15 +1602,9 @@ export class ExecutionsService {
     const result = await this.parseJudgeResponse(response);
 
     if (!response.ok) {
-
       throw new BadGatewayException(
-
-        result.message ??
-
-          'Judge rejected the execution request.',
-
+        result.message ?? 'Judge rejected the execution request.',
       );
-
     }
 
     /* =====================================================
@@ -2715,409 +1614,145 @@ export class ExecutionsService {
     ===================================================== */
 
     return {
-
       problemSlug: body.problemSlug,
-
       language,
-
       workspaceType: body.workspaceType,
-
       context: body.context,
-
       status: result.status,
-
       output: result.output ?? '',
-
       stderr: result.stderr ?? '',
-
       exitCode: result.exitCode ?? null,
-
       message: result.message,
-
     };
-
   }
 
   /* =======================================================
 
      RUN FRAMEWORK
-
      Endpoint:
-
      POST /run/framework
-
      Current runtimes:
-
      - Express
-
      - React
-
      - Vue
-
      - Angular
-
      - Next.js
-
      - NestJS
-
      - Django
 
   ======================================================= */
 
   private async runFramework({
-
     body,
-
     language,
-
     runtime,
-
   }: {
-
-    body:
-
-      ExecutionRequest;
-
-    language:
-
-      SupportedLanguage;
-
-    runtime:
-
-      SupportedFrameworkRuntime;
-
+    body: ExecutionRequest;
+    language: SupportedLanguage;
+    runtime: SupportedFrameworkRuntime;
   }) {
+    const files = this.buildFrameworkFiles(body, runtime, language);
 
-    const files =
+    const tests = this.getFrameworkRunTests(body, runtime);
 
-      this.buildFrameworkFiles(
+    const response = await fetch(
+      `${this.judgeUrl}/run/framework`,
 
-        body,
-
-        runtime,
-
-        language,
-
-      );
-
-    const tests =
-
-      this.getFrameworkRunTests(
-
-        body,
-
-        runtime,
-
-      );
-
-    const response =
-
-      await fetch(
-
-        `${this.judgeUrl}/run/framework`,
-
-        {
-
-          method:
-
-            'POST',
-
-          headers: {
-
-            'Content-Type':
-
-              'application/json',
-
-          },
-
-          body:
-
-            JSON.stringify({
-
-              problemSlug:
-
-                body.problemSlug,
-
-              runtime,
-
-              files,
-
-              tests,
-
-            }),
-
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
 
-      );
+        body: JSON.stringify({
+          problemSlug: body.problemSlug,
+          runtime,
+          files,
+          tests,
+        }),
+      },
+    );
 
-    const result =
+    const result = await this.parseJudgeResponse(response);
 
-      await this.parseJudgeResponse(
-
-        response,
-
-      );
-
-    if (
-
-      !response.ok
-
-    ) {
-
+    if (!response.ok) {
       throw new BadGatewayException(
-
-        result.message ??
-
-          'Framework judge rejected the execution request.',
-
+        result.message ?? 'Framework judge rejected the execution request.',
       );
-
     }
 
-    const frameworkTests =
-
-      Array.isArray(result.tests)
-
-        ? result.tests
-
-        : [];
+    const frameworkTests = Array.isArray(result.tests) ? result.tests : [];
 
     const shouldFormatFrameworkTests =
-
-      (
-
-        runtime === 'springboot' ||
-
+      (runtime === 'springboot' ||
         runtime === 'fastapi' ||
-
         runtime === 'aspnetcore' ||
-
-        runtime === 'django'
-
-      ) &&
-
+        runtime === 'django') &&
       frameworkTests.length > 0;
 
-    const frameworkOutput =
-
-      shouldFormatFrameworkTests
-
-        ? [
-
-            result.output ||
-
-              (
-
-                runtime === 'django'
-
-                  ? 'Django validation passed.'
-
-                  : 'Build successful.'
-
-              ),
-
-            '',
-
-            ...frameworkTests.flatMap(
-
-              (
-
-                test,
-
-                index,
-
-              ) => {
-
-                const lines = [
-
-                  `Test ${index + 1}: ${
-
-                    test.passed
-
-                      ? 'PASSED'
-
-                      : 'FAILED'
-
-                  }`,
-
-                ];
-
-                /*
-
-                 * Spring Boot tests are HTTP endpoint tests, so
-
-                 * show the request method and path.
-
-                 *
-
-                 * Django basic-view tests execute the configured
-
-                 * callable directly. Do not invent an HTTP route
-
-                 * such as GET / when the test does not contain one.
-
-                 */
-
-                if (
-
-                  runtime === 'springboot' ||
-
-                  runtime === 'fastapi' ||
-
-                  runtime === 'aspnetcore'
-
-                ) {
-
-                  lines.push(
-
-                    `${test.method ?? 'GET'} ${
-
-                      test.path ?? '/'
-
-                    }`,
-
-                  );
-
-                } else if (
-
-                  test.method ||
-
-                  test.path
-
-                ) {
-
-                  lines.push(
-
-                    `${test.method ?? 'GET'} ${
-
-                      test.path ?? '/'
-
-                    }`,
-
-                  );
-
-                }
-
-                lines.push(
-
-                  `Expected Status: ${
-
-                    test.expectedStatus ??
-
-                    ''
-
-                  }`,
-
-                  `Actual Status: ${
-
-                    test.actualStatus ??
-
-                    ''
-
-                  }`,
-
-                  `Expected: ${
-
-                    test.expectedOutput ??
-
-                    ''
-
-                  }`,
-
-                  `Actual: ${
-
-                    test.actualOutput ??
-
-                    ''
-
-                  }`,
-
-                  '',
-
-                );
-
-                return lines;
-
-              },
-
-            ),
-
-          ]
-
-            .join('\n')
-
-            .trim()
-
-        : result.output ?? '';
+    const frameworkOutput = shouldFormatFrameworkTests
+      ? [
+          result.output ||
+            (runtime === 'django'
+              ? 'Django validation passed.'
+              : 'Build successful.'),
+
+          '',
+          ...frameworkTests.flatMap((test, index) => {
+            const lines = [
+              `Test ${index + 1}: ${test.passed ? 'PASSED' : 'FAILED'}`,
+            ];
+
+            /*
+             * Spring Boot tests are HTTP endpoint tests, so
+             * show the request method and path.
+             *
+             * Django basic-view tests execute the configured
+             * callable directly. Do not invent an HTTP route
+             * such as GET / when the test does not contain one.
+             */
+
+            if (
+              runtime === 'springboot' ||
+              runtime === 'fastapi' ||
+              runtime === 'aspnetcore'
+            ) {
+              lines.push(`${test.method ?? 'GET'} ${test.path ?? '/'}`);
+            } else if (test.method || test.path) {
+              lines.push(`${test.method ?? 'GET'} ${test.path ?? '/'}`);
+            }
+            lines.push(
+              `Expected Status: ${test.expectedStatus ?? ''}`,
+              `Actual Status: ${test.actualStatus ?? ''}`,
+              `Expected: ${test.expectedOutput ?? ''}`,
+              `Actual: ${test.actualOutput ?? ''}`,
+              '',
+            );
+            return lines;
+          }),
+        ]
+          .join('\n')
+          .trim()
+      : (result.output ?? '');
 
     return {
-
-      problemSlug:
-
-        body.problemSlug,
-
+      problemSlug: body.problemSlug,
       language,
-
       runtime,
-
-      workspaceType:
-
-        body.workspaceType,
-
-      context:
-
-        body.context,
-
-      status:
-
-        result.status,
-
-      output:
-
-        frameworkOutput,
-
-      stderr:
-
-        result.stderr ??
-
-        '',
-
-      exitCode:
-
-        result.exitCode ??
-
-        null,
-
-      message:
-
-        result.message,
-
-      testsReceived:
-
-        result.testsReceived,
-
-      testsExecuted:
-
-        result.testsExecuted,
-
-      passedTests:
-
-        result.passedTests,
-
-      failedTests:
-
-        result.failedTests,
-
-      totalTests:
-
-        result.totalTests,
-
-      tests:
-
-        result.tests,
-
+      workspaceType: body.workspaceType,
+      context: body.context,
+      status: result.status,
+      output: frameworkOutput,
+      stderr: result.stderr ?? '',
+      exitCode: result.exitCode ?? null,
+      message: result.message,
+      testsReceived: result.testsReceived,
+      testsExecuted: result.testsExecuted,
+      passedTests: result.passedTests,
+      failedTests: result.failedTests,
+      totalTests: result.totalTests,
+      tests: result.tests,
     };
-
   }
 
   /* =======================================================
@@ -3144,14 +1779,11 @@ export class ExecutionsService {
 
     let response: Response;
     try {
-      response = await fetch(
-        `${this.judgeUrl}/run/aws/${mode}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ problemSlug, code }),
-        },
-      );
+      response = await fetch(`${this.judgeUrl}/run/aws/${mode}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ problemSlug, code }),
+      });
     } catch {
       throw new BadGatewayException(
         'Unable to connect to the AWS Python judge.',
@@ -3172,7 +1804,6 @@ export class ExecutionsService {
         result.message ?? 'AWS grading request was rejected.',
       );
     }
-
     return result;
   }
 
@@ -3199,14 +1830,11 @@ export class ExecutionsService {
 
     let response: Response;
     try {
-      response = await fetch(
-        `${this.judgeUrl}/run/azure/${mode}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ problemSlug, code }),
-        },
-      );
+      response = await fetch(`${this.judgeUrl}/run/azure/${mode}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ problemSlug, code }),
+      });
     } catch {
       throw new BadGatewayException(
         'Unable to connect to the Azure Python judge.',
@@ -3237,33 +1865,15 @@ export class ExecutionsService {
 
   ======================================================= */
 
-  async run(
-
-    body: ExecutionRequest,
-    _userId: string | null = null,
-
-  ) {
-
+  private async runDirect(body: ExecutionRequest) {
     /* =====================================================
 
        VALIDATE PROBLEM SLUG
 
     ===================================================== */
 
-    if (
-
-      !body.problemSlug ||
-
-      !body.problemSlug.trim()
-
-    ) {
-
-      throw new BadRequestException(
-
-        'Problem slug is required.',
-
-      );
-
+    if (!body.problemSlug || !body.problemSlug.trim()) {
+      throw new BadRequestException('Problem slug is required.');
     }
 
     /* =====================================================
@@ -3272,11 +1882,7 @@ export class ExecutionsService {
 
     ===================================================== */
 
-    body.problemSlug =
-
-      body.problemSlug
-
-        .trim();
+    body.problemSlug = body.problemSlug.trim();
 
     /* =====================================================
 
@@ -3284,20 +1890,8 @@ export class ExecutionsService {
 
     ===================================================== */
 
-    if (
-
-      !body.language ||
-
-      !body.language.trim()
-
-    ) {
-
-      throw new BadRequestException(
-
-        'Language is required.',
-
-      );
-
+    if (!body.language || !body.language.trim()) {
+      throw new BadRequestException('Language is required.');
     }
 
     /* =====================================================
@@ -3306,20 +1900,8 @@ export class ExecutionsService {
 
     ===================================================== */
 
-    if (
-
-      !body.workspaceType ||
-
-      !body.workspaceType.trim()
-
-    ) {
-
-      throw new BadRequestException(
-
-        'Workspace type is required.',
-
-      );
-
+    if (!body.workspaceType || !body.workspaceType.trim()) {
+      throw new BadRequestException('Workspace type is required.');
     }
 
     /* =====================================================
@@ -3336,20 +1918,8 @@ export class ExecutionsService {
 
     ===================================================== */
 
-    if (
-
-      !body.code ||
-
-      !body.code.trim()
-
-    ) {
-
-      throw new BadRequestException(
-
-        'Code is required.',
-
-      );
-
+    if (!body.code || !body.code.trim()) {
+      throw new BadRequestException('Code is required.');
     }
 
     /* =====================================================
@@ -3389,22 +1959,10 @@ export class ExecutionsService {
 
     ===================================================== */
 
-    if (
-
-      !this.isSupportedLanguage(
-
-        language,
-
-      )
-
-    ) {
-
+    if (!this.isSupportedLanguage(language)) {
       throw new BadRequestException(
-
         `Unsupported language: ${body.language}. Supported languages are C, C++, C#, Java, JavaScript, TypeScript, Python, Python Data Analytics, Python Machine Learning, Python Spark (PySpark), PHP, Ruby and Swift.`,
-
       );
-
     }
 
     /* =====================================================
@@ -3413,13 +1971,7 @@ export class ExecutionsService {
 
     ===================================================== */
 
-    const workspaceType =
-
-      body.workspaceType
-
-        .trim()
-
-        .toLowerCase();
+    const workspaceType = body.workspaceType.trim().toLowerCase();
 
     /* =====================================================
 
@@ -3437,23 +1989,10 @@ export class ExecutionsService {
 
     ===================================================== */
 
-    const frameworkRuntime =
-
-      this.resolveFrameworkRuntime(
-
-        body,
-
-      );
+    const frameworkRuntime = this.resolveFrameworkRuntime(body);
 
     const shouldUseFrameworkJudge =
-
-      workspaceType ===
-
-        'framework' ||
-
-      frameworkRuntime !==
-
-        null;
+      workspaceType === 'framework' || frameworkRuntime !== null;
 
     /* =====================================================
 
@@ -3461,20 +2000,10 @@ export class ExecutionsService {
 
     ===================================================== */
 
-    if (
-
-      shouldUseFrameworkJudge &&
-
-      !frameworkRuntime
-
-    ) {
-
+    if (shouldUseFrameworkJudge && !frameworkRuntime) {
       throw new BadRequestException(
-
         'Framework runtime could not be resolved for this problem.',
-
       );
-
     }
 
     /* =====================================================
@@ -3484,23 +2013,12 @@ export class ExecutionsService {
     ===================================================== */
 
     if (
-
       frameworkRuntime &&
-
-      !this.isSupportedFrameworkRuntime(
-
-        frameworkRuntime,
-
-      )
-
+      !this.isSupportedFrameworkRuntime(frameworkRuntime)
     ) {
-
       throw new BadRequestException(
-
         `Unsupported framework runtime: ${frameworkRuntime}.`,
-
       );
-
     }
 
     /* =====================================================
@@ -3678,31 +2196,18 @@ export class ExecutionsService {
     ===================================================== */
 
     try {
-
       /* ===================================================
 
          FRAMEWORK EXECUTION
 
       =================================================== */
 
-      if (
-
-        frameworkRuntime
-
-      ) {
-
+      if (frameworkRuntime) {
         return await this.runFramework({
-
           body,
-
           language,
-
-          runtime:
-
-            frameworkRuntime,
-
+          runtime: frameworkRuntime,
         });
-
       }
 
       /* ===================================================
@@ -3712,35 +2217,18 @@ export class ExecutionsService {
       =================================================== */
 
       return await this.runCode({
-
         body,
-
         language,
-
       });
-
-    } catch (
-
-      error
-
-    ) {
-
+    } catch (error) {
       /* ===================================================
 
          PRESERVE KNOWN BAD GATEWAY ERRORS
 
       =================================================== */
 
-      if (
-
-        error instanceof
-
-        BadGatewayException
-
-      ) {
-
+      if (error instanceof BadGatewayException) {
         throw error;
-
       }
 
       /* ===================================================
@@ -3753,16 +2241,8 @@ export class ExecutionsService {
 
       =================================================== */
 
-      if (
-
-        error instanceof
-
-        BadRequestException
-
-      ) {
-
+      if (error instanceof BadRequestException) {
         throw error;
-
       }
 
       /* ===================================================
@@ -3771,13 +2251,7 @@ export class ExecutionsService {
 
       =================================================== */
 
-      console.error(
-
-        'Execution service error:',
-
-        error,
-
-      );
+      console.error('Execution service error:', error);
 
       /* ===================================================
 
@@ -3785,14 +2259,46 @@ export class ExecutionsService {
 
       =================================================== */
 
-      throw new BadGatewayException(
-
-        'Unable to connect to the code judge.',
-
-      );
-
+      throw new BadGatewayException('Unable to connect to the code judge.');
     }
+  }
+  constructor(private readonly gateway: JudgeGateway) {}
 
+  onModuleInit() {
+    this.gateway.register('run', async (job) => {
+      const body = (job.payload as ExecutionRequest | undefined) ?? {
+        problemSlug: job.problemSlug,
+        language: job.language,
+        workspaceType: job.workspaceType,
+        code: job.code,
+        input: job.input ?? undefined,
+      };
+      const response = await this.runDirect(body);
+      return { response, record: this.toRunRecord(response) };
+    });
   }
 
+  async run(body: ExecutionRequest, userId: string | null = null) {
+    const { response } = await this.gateway.execute({
+      kind: 'run',
+      userId,
+      problemSlug: String(body.problemSlug ?? '').trim(),
+      language: String(body.language ?? '').trim().toLowerCase(),
+      workspaceType: String(body.workspaceType ?? ''),
+      code: String(body.code ?? ''),
+      input: body.input ?? null,
+      payload: body,
+    });
+    return response;
+  }
+
+  private toRunRecord(result: { status?: string; output?: string; stderr?: string; exitCode?: number | null; message?: string }): RunRecord {
+    const outcome: Record<string, string> = { SUCCESS: 'ok', COMPILATION_ERROR: 'ce', RUNTIME_ERROR: 're', TIME_LIMIT_EXCEEDED: 'tle' };
+    return {
+      outcome: outcome[result.status ?? ''] ?? 'sandbox',
+      exitCode: result.exitCode ?? null,
+      stdout: result.output ?? '',
+      stderr: result.stderr || result.message || '',
+    };
+  }
 }

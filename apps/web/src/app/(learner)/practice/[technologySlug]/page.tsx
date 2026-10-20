@@ -1,236 +1,150 @@
-'use client';
+"use client";
 
-import {
-  ArrowLeft,
-  BookOpen,
-  Braces,
-  Code2,
-  Layers3,
-  LogOut,
-  Trophy,
-  UserRound,
-} from 'lucide-react';
+import { ArrowLeft, BookOpen, Braces, Code2, Layers3, LogOut, Trophy, UserRound } from "lucide-react";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import {
-  useParams,
-  useRouter,
-} from 'next/navigation';
+import { useParams, useRouter } from "next/navigation";
 
-import {
-  getProblemsBySlugs,
-} from '@/features/problem-engine';
+import { getProblemsBySlugs } from "@/features/problem-engine";
 
-import {
-  getPracticePathByTechnology,
-  type PracticeLevel,
-} from '@/features/practice-path-engine';
+import { getPracticePathByTechnology, type PracticeLevel } from "@/features/practice-path-engine";
 
-import {
-  getSolvedProblemSlugs,
-} from '@/features/progress/local-progress';
+import { getSolvedProblemSlugs } from "@/features/progress/local-progress";
 
-import ProblemList from '@/components/problems/ProblemList';
-
-import styles from './practice.module.css';
+import ProblemList from "@/components/problems/ProblemList";
+import { Building2, Sparkles } from "lucide-react";
+import { syncServerProgress, toPracticeProblem, useLearnerCatalog } from "@/features/learner/api";
+import styles from "./practice.module.css";
 
 /* =========================================================
    FILTER TYPE
 ========================================================= */
 
-type LevelFilter =
-  | 'All'
-  | PracticeLevel;
+type LevelFilter = "All" | PracticeLevel;
 
 /* =========================================================
    NORMALIZE ROUTE TECHNOLOGY SLUG
 ========================================================= */
 
-function normalizeTechnologySlug(
-  technologySlug: string,
-) {
-  const slug =
-    technologySlug
-      .trim()
-      .toLowerCase();
+function normalizeTechnologySlug(technologySlug: string) {
+  const slug = technologySlug.trim().toLowerCase();
 
-  const aliases:
-    Record<string, string> = {
-      /* Programming languages */
+  const aliases: Record<string, string> = {
+    /* Programming languages */
 
-      c:
-        'c',
+    c: "c",
 
-      cpp:
-        'cpp',
+    cpp: "cpp",
 
-      'c++':
-        'cpp',
+    "c++": "cpp",
 
-      javascript:
-        'javascript',
+    javascript: "javascript",
 
-      js:
-        'javascript',
+    js: "javascript",
 
-      typescript:
-        'typescript',
+    typescript: "typescript",
 
-      ts:
-        'typescript',
+    ts: "typescript",
 
-      python:
-        'python',
+    python: "python",
 
-      py:
-        'python',
+    py: "python",
 
-      java:
-        'java',
+    java: "java",
 
-      csharp:
-        'csharp',
+    csharp: "csharp",
 
-      'c-sharp':
-        'csharp',
+    "c-sharp": "csharp",
 
-      'c#':
-        'csharp',
+    "c#": "csharp",
 
-      cs:
-        'csharp',
+    cs: "csharp",
 
-      php:
-        'php',
+    php: "php",
 
-      php8:
-        'php',
+    php8: "php",
 
-      'php-8':
-        'php',
+    "php-8": "php",
 
-      'php8.3':
-        'php',
+    "php8.3": "php",
 
-      /* Databases */
+    /* Databases */
 
-      postgresql:
-        'postgresql',
+    postgresql: "postgresql",
 
-      postgres:
-        'postgresql',
+    postgres: "postgresql",
 
-      pg:
-        'postgresql',
+    pg: "postgresql",
 
-      pgsql:
-        'postgresql',
+    pgsql: "postgresql",
 
-      'postgre-sql':
-        'postgresql',
+    "postgre-sql": "postgresql",
 
-      'postgresql-db':
-        'postgresql',
+    "postgresql-db": "postgresql",
 
-      /* Frontend */
+    /* Frontend */
 
-      react:
-        'react',
+    react: "react",
 
-      reactjs:
-        'react',
+    reactjs: "react",
 
-      'react-js':
-        'react',
+    "react-js": "react",
 
-      angular:
-        'angular',
+    angular: "angular",
 
-      angularjs:
-        'angular',
+    angularjs: "angular",
 
-      'html-css':
-        'html-css',
+    "html-css": "html-css",
 
-      htmlcss:
-        'html-css',
+    htmlcss: "html-css",
 
-      /* Backend */
+    /* Backend */
 
-      node:
-        'nodejs',
+    node: "nodejs",
 
-      nodejs:
-        'nodejs',
+    nodejs: "nodejs",
 
-      'node-js':
-        'nodejs',
+    "node-js": "nodejs",
 
-      express:
-        'expressjs',
+    express: "expressjs",
 
-      expressjs:
-        'expressjs',
+    expressjs: "expressjs",
 
-      'express-js':
-        'expressjs',
+    "express-js": "expressjs",
 
-      nextjs:
-        'nextjs',
+    nextjs: "nextjs",
 
-      'next-js':
-        'nextjs',
+    "next-js": "nextjs",
 
-      nestjs:
-        'nestjs',
+    nestjs: "nestjs",
 
-      'nest-js':
-        'nestjs',
+    "nest-js": "nestjs",
 
-      springboot:
-        'springboot',
+    springboot: "springboot",
 
-      'spring-boot':
-        'springboot',
+    "spring-boot": "springboot",
 
-      aspnetcore:
-        'aspnetcore',
+    aspnetcore: "aspnetcore",
 
-      'aspnet-core':
-        'aspnetcore',
+    "aspnet-core": "aspnetcore",
 
-      'asp.net-core':
-        'aspnetcore',
+    "asp.net-core": "aspnetcore",
 
-      'asp.netcore':
-        'aspnetcore',
+    "asp.netcore": "aspnetcore",
 
-      'asp.net core':
-        'aspnetcore',
+    "asp.net core": "aspnetcore",
 
-      'dotnet:aspnet-core':
-        'aspnetcore',
+    "dotnet:aspnet-core": "aspnetcore",
 
-      'dotnet:aspnetcore':
-        'aspnetcore',
+    "dotnet:aspnetcore": "aspnetcore",
 
-      'dotnet/aspnet-core':
-        'aspnetcore',
+    "dotnet/aspnet-core": "aspnetcore",
 
-      'dotnet/aspnetcore':
-        'aspnetcore',
-    };
+    "dotnet/aspnetcore": "aspnetcore",
+  };
 
-  return (
-    aliases[slug] ??
-    slug
-  );
+  return aliases[slug] ?? slug;
 }
 
 /* =========================================================
@@ -238,110 +152,78 @@ function normalizeTechnologySlug(
 ========================================================= */
 
 export default function TechnologyPracticePage() {
-  const router =
-    useRouter();
+  const router = useRouter();
 
-  const params =
-    useParams<{
-      technologySlug:
-        string;
-    }>();
+  const params = useParams<{
+    technologySlug: string;
+  }>();
 
   /* =======================================================
      ROUTE TECHNOLOGY
   ======================================================= */
 
-  const rawTechnologySlug =
-    params.technologySlug;
+  const rawTechnologySlug = params.technologySlug;
 
-  const technologySlug =
-    useMemo(
-      () =>
-        normalizeTechnologySlug(
-          rawTechnologySlug,
-        ),
-      [
-        rawTechnologySlug,
-      ],
-    );
+  const technologySlug = useMemo(() => normalizeTechnologySlug(rawTechnologySlug), [rawTechnologySlug]);
 
   /* =======================================================
      PRACTICE PATH
   ======================================================= */
 
-  const practicePath =
-    useMemo(
-      () =>
-        getPracticePathByTechnology(
-          technologySlug,
-        ),
+  const practicePath = useMemo(() => getPracticePathByTechnology(technologySlug), [technologySlug]);
+
+  const catalog = useLearnerCatalog(technologySlug);
+
+  const extraSections = useMemo(
+    () =>
       [
-        technologySlug,
-      ],
-    );
+        {
+          key: "institution",
+          title: `From ${catalog.institution?.name ?? "your institution"}`,
+          description: "Published by your institution for its learners.",
+          problems: catalog.items.filter((item) => item.source === "institution").map(toPracticeProblem),
+        },
+        {
+          key: "platform",
+          title: "More problems",
+          description: "Recently published practice problems.",
+          problems: catalog.items.filter((item) => item.source === "platform").map(toPracticeProblem),
+        },
+      ].filter((section) => section.problems.length > 0),
+    [catalog],
+  );
 
   /* =======================================================
      FILTER
   ======================================================= */
 
-  const [
-    selectedLevel,
-    setSelectedLevel,
-  ] =
-    useState<LevelFilter>(
-      'All',
-    );
+  const [selectedLevel, setSelectedLevel] = useState<LevelFilter>("All");
 
   /* =======================================================
      SOLVED PROBLEM STATE
   ======================================================= */
 
-  const [
-    solvedProblemSlugs,
-    setSolvedProblemSlugs,
-  ] =
-    useState<string[]>(
-      [],
-    );
+  const [solvedProblemSlugs, setSolvedProblemSlugs] = useState<string[]>([]);
 
   /* =======================================================
      AUTH
   ======================================================= */
 
-  useEffect(
-    () => {
-      const authenticated =
-        localStorage.getItem(
-          'elab_dummy_auth',
-        ) === 'true';
+  useEffect(() => {
+    const authenticated = localStorage.getItem("elab_dummy_auth") === "true";
 
-      if (
-        !authenticated
-      ) {
-        router.replace(
-          '/login',
-        );
-      }
-    },
-    [
-      router,
-    ],
-  );
+    if (!authenticated) {
+      router.replace("/login");
+    }
+  }, [router]);
 
   /* =======================================================
      RESET FILTER WHEN TECHNOLOGY CHANGES
   ======================================================= */
 
-  useEffect(
-    () => {
-      setSelectedLevel(
-        'All',
-      );
-    },
-    [
-      technologySlug,
-    ],
-  );
+  useEffect(() => {
+    setSelectedLevel("All");
+  }, [technologySlug]);
 
   /* =======================================================
      ALL PROBLEM SLUGS
@@ -354,37 +236,13 @@ export default function TechnologyPracticePage() {
      ...
   ======================================================= */
 
-  const pathProblemSlugs =
-    useMemo(
-      () => {
-        if (
-          !practicePath
-        ) {
-          return [];
-        }
+  const pathProblemSlugs = useMemo(() => {
+    if (!practicePath) {
+      return [];
+    }
 
-        return [
-          ...practicePath.stages,
-        ]
-          .sort(
-            (
-              a,
-              b,
-            ) =>
-              a.order -
-              b.order,
-          )
-          .flatMap(
-            (
-              stage,
-            ) =>
-              stage.problemSlugs,
-          );
-      },
-      [
-        practicePath,
-      ],
-    );
+    return [...practicePath.stages].sort((a, b) => a.order - b.order).flatMap((stage) => stage.problemSlugs);
+  }, [practicePath]);
 
   /* =======================================================
      RESOLVE ALL REGISTERED PROBLEMS
@@ -393,16 +251,7 @@ export default function TechnologyPracticePage() {
      problem registry.
   ======================================================= */
 
-  const registeredProblems =
-    useMemo(
-      () =>
-        getProblemsBySlugs(
-          pathProblemSlugs,
-        ),
-      [
-        pathProblemSlugs,
-      ],
-    );
+  const registeredProblems = useMemo(() => getProblemsBySlugs(pathProblemSlugs), [pathProblemSlugs]);
 
   /* =======================================================
      REGISTERED PROBLEM LOOKUP
@@ -411,23 +260,7 @@ export default function TechnologyPracticePage() {
      repeatedly scanning the entire registry.
   ======================================================= */
 
-  const registeredProblemMap =
-    useMemo(
-      () =>
-        new Map(
-          registeredProblems.map(
-            (
-              problem,
-            ) => [
-              problem.slug,
-              problem,
-            ],
-          ),
-        ),
-      [
-        registeredProblems,
-      ],
-    );
+  const registeredProblemMap = useMemo(() => new Map(registeredProblems.map((problem) => [problem.slug, problem])), [registeredProblems]);
 
   /* =======================================================
      DEBUG MISSING PROBLEM DEFINITIONS
@@ -437,161 +270,80 @@ export default function TechnologyPracticePage() {
      tells us exactly which problem is missing.
   ======================================================= */
 
-  useEffect(
-    () => {
-      if (
-        !practicePath
-      ) {
-        return;
-      }
+  useEffect(() => {
+    if (!practicePath) {
+      return;
+    }
 
-      const missingSlugs =
-        pathProblemSlugs.filter(
-          (
-            slug,
-          ) =>
-            !registeredProblemMap.has(
-              slug,
-            ),
-        );
+    const missingSlugs = pathProblemSlugs.filter((slug) => !registeredProblemMap.has(slug));
 
-      if (
-        missingSlugs.length >
-        0
-      ) {
-        console.warn(
-          `[Practice] ${technologySlug} has problem slugs that are not registered:`,
-          missingSlugs,
-        );
-      }
-    },
-    [
-      practicePath,
-      pathProblemSlugs,
-      registeredProblemMap,
-      technologySlug,
-    ],
-  );
+    if (missingSlugs.length > 0) {
+      console.warn(`[Practice] ${technologySlug} has problem slugs that are not registered:`, missingSlugs);
+    }
+  }, [practicePath, pathProblemSlugs, registeredProblemMap, technologySlug]);
 
   /* =======================================================
      REFRESH PROGRESS
   ======================================================= */
 
-  const refreshProgress =
-    useCallback(
-      () => {
-        const solved =
-          getSolvedProblemSlugs();
+  const refreshProgress = useCallback(() => {
+    const solved = getSolvedProblemSlugs();
 
-        setSolvedProblemSlugs(
-          solved,
-        );
-      },
-      [],
-    );
+    setSolvedProblemSlugs(solved);
+  }, []);
 
   /* =======================================================
      INITIAL PROGRESS
   ======================================================= */
 
-  useEffect(
-    () => {
-      refreshProgress();
-    },
-    [
-      refreshProgress,
-      technologySlug,
-    ],
-  );
+  useEffect(() => {
+    refreshProgress();
+    void syncServerProgress().then((changed) => {
+      if (changed) refreshProgress();
+    });
+  }, [refreshProgress, technologySlug]);
 
   /* =======================================================
      REFRESH PROGRESS WHEN USER RETURNS
   ======================================================= */
 
-  useEffect(
-    () => {
-      const handleFocus =
-        () => {
-          refreshProgress();
-        };
+  useEffect(() => {
+    const handleFocus = () => {
+      refreshProgress();
+    };
 
-      const handlePageShow =
-        () => {
-          refreshProgress();
-        };
+    const handlePageShow = () => {
+      refreshProgress();
+    };
 
-      window.addEventListener(
-        'focus',
-        handleFocus,
-      );
+    window.addEventListener("focus", handleFocus);
 
-      window.addEventListener(
-        'pageshow',
-        handlePageShow,
-      );
+    window.addEventListener("pageshow", handlePageShow);
 
-      return () => {
-        window.removeEventListener(
-          'focus',
-          handleFocus,
-        );
+    return () => {
+      window.removeEventListener("focus", handleFocus);
 
-        window.removeEventListener(
-          'pageshow',
-          handlePageShow,
-        );
-      };
-    },
-    [
-      refreshProgress,
-    ],
-  );
+      window.removeEventListener("pageshow", handlePageShow);
+    };
+  }, [refreshProgress]);
 
   /* =======================================================
      VISIBLE STAGES
   ======================================================= */
 
-  const visibleStages =
-    useMemo(
-      () => {
-        if (
-          !practicePath
-        ) {
-          return [];
-        }
+  const visibleStages = useMemo(() => {
+    if (!practicePath) {
+      return [];
+    }
 
-        const ordered =
-          [
-            ...practicePath.stages,
-          ].sort(
-            (
-              a,
-              b,
-            ) =>
-              a.order -
-              b.order,
-          );
+    const ordered = [...practicePath.stages].sort((a, b) => a.order - b.order);
 
-        if (
-          selectedLevel ===
-          'All'
-        ) {
-          return ordered;
-        }
+    if (selectedLevel === "All") {
+      return ordered;
+    }
 
-        return ordered.filter(
-          (
-            stage,
-          ) =>
-            stage.level ===
-            selectedLevel,
-        );
-      },
-      [
-        practicePath,
-        selectedLevel,
-      ],
-    );
+    return ordered.filter((stage) => stage.level === selectedLevel);
+  }, [practicePath, selectedLevel]);
 
   /* =======================================================
      TOTAL PROBLEMS
@@ -600,108 +352,47 @@ export default function TechnologyPracticePage() {
      curriculum even if a registry definition is missing.
   ======================================================= */
 
-  const totalProblems =
-    pathProblemSlugs.length;
+  const totalProblems = pathProblemSlugs.length;
 
   /* =======================================================
      SOLVED COUNT
   ======================================================= */
 
-  const solvedProblems =
-    useMemo(
-      () =>
-        pathProblemSlugs.filter(
-          (
-            problemSlug,
-          ) =>
-            solvedProblemSlugs.includes(
-              problemSlug,
-            ),
-        ).length,
-      [
-        pathProblemSlugs,
-        solvedProblemSlugs,
-      ],
-    );
+  const solvedProblems = useMemo(() => pathProblemSlugs.filter((problemSlug) => solvedProblemSlugs.includes(problemSlug)).length, [pathProblemSlugs, solvedProblemSlugs]);
 
   /* =======================================================
      PROGRESS %
   ======================================================= */
 
-  const progress =
-    totalProblems >
-    0
-      ? Math.round(
-          (
-            solvedProblems /
-            totalProblems
-          ) *
-            100,
-        )
-      : 0;
+  const progress = totalProblems > 0 ? Math.round((solvedProblems / totalProblems) * 100) : 0;
 
   /* =======================================================
      LOGOUT
   ======================================================= */
 
-  const logout =
-    () => {
-      localStorage.removeItem(
-        'elab_dummy_auth',
-      );
+  const logout = () => {
+    localStorage.removeItem("elab_dummy_auth");
 
-      localStorage.removeItem(
-        'elab_dummy_user',
-      );
+    localStorage.removeItem("elab_dummy_user");
 
-      router.replace(
-        '/login',
-      );
-    };
+    router.replace("/login");
+  };
 
   /* =======================================================
      NOT FOUND
   ======================================================= */
 
-  if (
-    !practicePath
-  ) {
+  if (!practicePath) {
     return (
-      <main
-        className={
-          styles.page
-        }
-      >
-        <div
-          className={
-            styles.notFound
-          }
-        >
+      <main className={styles.page}>
+        <div className={styles.notFound}>
           <Code2 />
 
-          <h1>
-            Practice path not
-            available
-          </h1>
+          <h1>Practice path not available</h1>
 
-          <p>
-            A practice path has
-            not yet been created
-            for{' '}
-            {
-              technologySlug
-            }
-            .
-          </p>
+          <p>A practice path has not yet been created for {technologySlug}.</p>
 
-          <button
-            type="button"
-            onClick={() =>
-              router.push(
-                '/dashboard',
-              )
-            }
-          >
+          <button type="button" onClick={() => router.push("/dashboard")}>
             Back to Dashboard
           </button>
         </div>
@@ -714,53 +405,23 @@ export default function TechnologyPracticePage() {
   ======================================================= */
 
   return (
-    <main
-      className={
-        styles.page
-      }
-    >
+    <main className={styles.page}>
       {/* =================================================
           HEADER
       ================================================= */}
 
-      <header
-        className={
-          styles.header
-        }
-      >
-        <div
-          className={
-            styles.headerInner
-          }
-        >
+      <header className={styles.header}>
+        <div className={styles.headerInner}>
           {/* =============================================
               LOGO
           ============================================= */}
 
-          <button
-            type="button"
-            className={
-              styles.logoArea
-            }
-            onClick={() =>
-              router.push(
-                '/dashboard',
-              )
-            }
-          >
-            <div
-              className={
-                styles.logoIcon
-              }
-            >
+          <button type="button" className={styles.logoArea} onClick={() => router.push("/dashboard")}>
+            <div className={styles.logoIcon}>
               <Braces />
             </div>
 
-            <div
-              className={
-                styles.logo
-              }
-            >
+            <div className={styles.logo}>
               e<span>Lab</span>
             </div>
           </button>
@@ -769,54 +430,19 @@ export default function TechnologyPracticePage() {
               NAVIGATION
           ============================================= */}
 
-          <nav
-            className={
-              styles.navShell
-            }
-          >
-            <button
-              type="button"
-              className={`${styles.navButton} ${styles.activeNav}`}
-              onClick={() =>
-                router.push(
-                  '/dashboard',
-                )
-              }
-            >
+          <nav className={styles.navShell}>
+            <button type="button" className={`${styles.navButton} ${styles.activeNav}`} onClick={() => router.push("/dashboard")}>
               <Code2 />
-
               Start Practicing
             </button>
 
-            <button
-              type="button"
-              className={
-                styles.navButton
-              }
-              onClick={() =>
-                router.push(
-                  '/stacks',
-                )
-              }
-            >
+            <button type="button" className={styles.navButton} onClick={() => router.push("/stacks")}>
               <Layers3 />
-
               Targeted Stack
             </button>
 
-            <button
-              type="button"
-              className={
-                styles.navButton
-              }
-              onClick={() =>
-                router.push(
-                  '/challenges',
-                )
-              }
-            >
+            <button type="button" className={styles.navButton} onClick={() => router.push("/challenges")}>
               <Trophy />
-
               Real-Time Challenges
             </button>
           </nav>
@@ -825,42 +451,18 @@ export default function TechnologyPracticePage() {
               USER
           ============================================= */}
 
-          <div
-            className={
-              styles.userArea
-            }
-          >
-            <div
-              className={
-                styles.avatar
-              }
-            >
+          <div className={styles.userArea}>
+            <div className={styles.avatar}>
               <UserRound />
             </div>
 
-            <div
-              className={
-                styles.userText
-              }
-            >
-              <strong>
-                Learner
-              </strong>
+            <div className={styles.userText}>
+              <strong>Learner</strong>
 
-              <span>
-                Practice Workspace
-              </span>
+              <span>Practice Workspace</span>
             </div>
 
-            <button
-              type="button"
-              className={
-                styles.logoutButton
-              }
-              onClick={
-                logout
-              }
-            >
+            <button type="button" className={styles.logoutButton} onClick={logout}>
               <LogOut />
             </button>
           </div>
@@ -871,28 +473,13 @@ export default function TechnologyPracticePage() {
           CONTENT
       ================================================= */}
 
-      <div
-        className={
-          styles.container
-        }
-      >
+      <div className={styles.container}>
         {/* ===============================================
             BACK
         =============================================== */}
 
-        <button
-          type="button"
-          className={
-            styles.backButton
-          }
-          onClick={() =>
-            router.push(
-              '/dashboard',
-            )
-          }
-        >
+        <button type="button" className={styles.backButton} onClick={() => router.push("/dashboard")}>
           <ArrowLeft />
-
           All Technologies
         </button>
 
@@ -900,86 +487,40 @@ export default function TechnologyPracticePage() {
             HERO
         ================================================= */}
 
-        <section
-          className={
-            styles.hero
-          }
-        >
-          <div
-            className={
-              styles.heroIcon
-            }
-          >
+        <section className={styles.hero}>
+          <div className={styles.heroIcon}>
             <Code2 />
           </div>
 
-          <div
-            className={
-              styles.heroContent
-            }
-          >
-            <span
-              className={
-                styles.eyebrow
-              }
-            >
-              Start Practicing
-            </span>
+          <div className={styles.heroContent}>
+            <span className={styles.eyebrow}>Start Practicing</span>
 
-            <h1>
-              {
-                practicePath.name
-              }
-            </h1>
+            <h1>{practicePath.name}</h1>
 
-            <p>
-              {
-                practicePath.description
-              }
-            </p>
+            <p>{practicePath.description}</p>
           </div>
 
           {/* =============================================
               PROGRESS
           ============================================= */}
 
-          <div
-            className={
-              styles.progressCard
-            }
-          >
+          <div className={styles.progressCard}>
             <div>
-              <strong>
-                {
-                  totalProblems
-                }
-              </strong>
+              <strong>{totalProblems}</strong>
 
-              <span>
-                Problems
-              </span>
+              <span>Problems</span>
             </div>
 
             <div>
-              <strong>
-                {
-                  solvedProblems
-                }
-              </strong>
+              <strong>{solvedProblems}</strong>
 
-              <span>
-                Solved
-              </span>
+              <span>Solved</span>
             </div>
 
             <div>
-              <strong>
-                {progress}%
-              </strong>
+              <strong>{progress}%</strong>
 
-              <span>
-                Progress
-              </span>
+              <span>Progress</span>
             </div>
           </div>
         </section>
@@ -988,59 +529,21 @@ export default function TechnologyPracticePage() {
             FILTERS
         ================================================= */}
 
-        <section
-          className={
-            styles.filters
-          }
-        >
-          {(
-            [
-              'All',
-              'Beginner',
-              'Intermediate',
-              'Advanced',
-            ] as LevelFilter[]
-          ).map(
-            (
-              level,
-            ) => (
-              <button
-                key={
-                  level
-                }
-                type="button"
-                className={`${styles.filterButton} ${
-                  selectedLevel ===
-                  level
-                    ? styles.filterActive
-                    : ''
-                }`}
-                onClick={() =>
-                  setSelectedLevel(
-                    level,
-                  )
-                }
-              >
-                {level}
-              </button>
-            ),
-          )}
+        <section className={styles.filters}>
+          {(["All", "Beginner", "Intermediate", "Advanced"] as LevelFilter[]).map((level) => (
+            <button key={level} type="button" className={`${styles.filterButton} ${selectedLevel === level ? styles.filterActive : ""}`} onClick={() => setSelectedLevel(level)}>
+              {level}
+            </button>
+          ))}
         </section>
 
         {/* =================================================
             PRACTICE STAGES
         ================================================= */}
 
-        <section
-          className={
-            styles.stageList
-          }
-        >
-          {visibleStages.map(
-            (
-              stage,
-            ) => {
-              /* ===========================================
+        <section className={styles.stageList}>
+          {visibleStages.map((stage) => {
+            /* ===========================================
                  RESOLVE STAGE PROBLEMS
 
                  IMPORTANT:
@@ -1053,173 +556,89 @@ export default function TechnologyPracticePage() {
                  We resolve them here.
               =========================================== */
 
-              const problems =
-                stage.problemSlugs
-                  .map(
-                    (
-                      problemSlug,
-                    ) =>
-                      registeredProblemMap.get(
-                        problemSlug,
-                      ),
-                  )
-                  .filter(
-                    (
-                      problem,
-                    ): problem is NonNullable<
-                      typeof problem
-                    > =>
-                      Boolean(
-                        problem,
-                      ),
-                  );
+            const problems = stage.problemSlugs.map((problemSlug) => registeredProblemMap.get(problemSlug)).filter((problem): problem is NonNullable<typeof problem> => Boolean(problem));
 
-              /* ===========================================
+            /* ===========================================
                  MISSING DEFINITIONS FOR THIS STAGE
               =========================================== */
 
-              const missingProblemSlugs =
-                stage.problemSlugs.filter(
-                  (
-                    problemSlug,
-                  ) =>
-                    !registeredProblemMap.has(
-                      problemSlug,
-                    ),
-                );
+            const missingProblemSlugs = stage.problemSlugs.filter((problemSlug) => !registeredProblemMap.has(problemSlug));
 
-              /* ===========================================
+            /* ===========================================
                  SOLVED COUNT
               =========================================== */
 
-              const stageSolvedCount =
-                stage.problemSlugs.filter(
-                  (
-                    problemSlug,
-                  ) =>
-                    solvedProblemSlugs.includes(
-                      problemSlug,
-                    ),
-                ).length;
+            const stageSolvedCount = stage.problemSlugs.filter((problemSlug) => solvedProblemSlugs.includes(problemSlug)).length;
 
-              return (
-                <section
-                  key={`${stage.slug}-${solvedProblemSlugs.length}`}
-                  className={
-                    styles.stage
-                  }
-                >
-                  {/* =====================================
+            return (
+              <section key={`${stage.slug}-${solvedProblemSlugs.length}`} className={styles.stage}>
+                {/* =====================================
                       STAGE HEADER
                   ===================================== */}
 
-                  <div
-                    className={
-                      styles.stageHeader
-                    }
-                  >
-                    <div
-                      className={
-                        styles.stageNumber
-                      }
-                    >
-                      {String(
-                        stage.order,
-                      ).padStart(
-                        2,
-                        '0',
-                      )}
+                <div className={styles.stageHeader}>
+                  <div className={styles.stageNumber}>{String(stage.order).padStart(2, "0")}</div>
+
+                  <div className={styles.stageInfo}>
+                    <div className={styles.stageMeta}>
+                      <span>{stage.level}</span>
+
+                      <span>{stage.problemSlugs.length} problems</span>
+
+                      {stageSolvedCount > 0 && <span>{stageSolvedCount} solved</span>}
                     </div>
 
-                    <div
-                      className={
-                        styles.stageInfo
-                      }
-                    >
-                      <div
-                        className={
-                          styles.stageMeta
-                        }
-                      >
-                        <span>
-                          {
-                            stage.level
-                          }
-                        </span>
+                    <h2>{stage.title}</h2>
 
-                        <span>
-                          {
-                            stage.problemSlugs
-                              .length
-                          }{' '}
-                          problems
-                        </span>
-
-                        {stageSolvedCount >
-                          0 && (
-                          <span>
-                            {
-                              stageSolvedCount
-                            }{' '}
-                            solved
-                          </span>
-                        )}
-                      </div>
-
-                      <h2>
-                        {
-                          stage.title
-                        }
-                      </h2>
-
-                      <p>
-                        {
-                          stage.description
-                        }
-                      </p>
-                    </div>
-
-                    <BookOpen
-                      className={
-                        styles.stageIcon
-                      }
-                    />
+                    <p>{stage.description}</p>
                   </div>
 
-                  {/* =====================================
+                  <BookOpen className={styles.stageIcon} />
+                </div>
+
+                {/* =====================================
                       PROBLEMS
                   ===================================== */}
 
-                  <div
-                    className={
-                      styles.problemArea
-                    }
-                  >
-                    <ProblemList
-                      key={`${stage.slug}-${solvedProblemSlugs.join('-')}`}
-                      problems={
-                        problems
-                      }
-                      context={{
-                        source:
-                          'practice',
+                <div className={styles.problemArea}>
+                  <ProblemList
+                    key={`${stage.slug}-${solvedProblemSlugs.join("-")}`}
+                    problems={problems}
+                    context={{
+                      source: "practice",
 
-                        technologySlug,
-                      }}
-                      emptyTitle="No problems available"
-                      emptyDescription={
-                        missingProblemSlugs.length >
-                        0
-                          ? `Problem definitions are missing from the central registry: ${missingProblemSlugs.join(', ')}`
-                          : 'Problems for this stage have not yet been added.'
-                      }
-                    />
-                  </div>
-                </section>
-              );
-            },
-          )}
+                      technologySlug,
+                    }}
+                    emptyTitle="No problems available"
+                    emptyDescription={missingProblemSlugs.length > 0 ? `Problem definitions are missing from the central registry: ${missingProblemSlugs.join(", ")}` : "Problems for this stage have not yet been added."}
+                  />
+                </div>
+              </section>
+            );
+          })}
         </section>
+
+        {selectedLevel === "All" && extraSections.length > 0 && (
+          <section className={styles.stageList}>
+            {extraSections.map((section) => (
+              <section key={`${section.key}-${solvedProblemSlugs.length}`} className={styles.stage}>
+                <div className={styles.stageHeader}>
+                  <div className={styles.stageNumber}>{section.key === "institution" ? <Building2 /> : <Sparkles />}</div>
+                  <div className={styles.stageInfo}>
+                    <div className={styles.stageMeta}>
+                      <span>{`${section.problems.length} ${section.problems.length === 1 ? "problem" : "problems"}`}</span>
+                    </div>
+                    <h2>{section.title}</h2>
+                    <p>{section.description}</p>
+                  </div>
+                </div>
+                <div className={styles.problemArea}>
+                  <ProblemList key={`${section.key}-${solvedProblemSlugs.join("-")}`} problems={section.problems} context={{ source: "practice", technologySlug }} emptyTitle="No problems available" emptyDescription="These problems are not available right now." />
+                </div>
+              </section>
+            ))}
+          </section>
+        )}
       </div>
     </main>
   );

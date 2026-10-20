@@ -1,56 +1,18 @@
-import {
-  Body,
-  Controller,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 
-import {
-  SubmissionsService,
-} from './submissions.service.js';
+import { CurrentUser, type AuthenticatedUser } from '../auth/current-user.decorator.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { SubmissionsService } from './submissions.service.js';
 
-/* =========================================================
-   SUBMISSION REQUEST TYPE
-
-   Automatically derives the request
-   type from SubmissionsService.submit().
-
-   Therefore SubmissionRequest does NOT
-   need to be exported from the service.
-========================================================= */
-
-type SubmissionRequest =
-  Parameters<
-    SubmissionsService['submit']
-  >[0];
-
-/* =========================================================
-   SUBMISSIONS CONTROLLER
-========================================================= */
+type SubmissionRequest = Parameters<SubmissionsService['submit']>[0];
 
 @Controller('submissions')
+@UseGuards(JwtAuthGuard)
 export class SubmissionsController {
-  constructor(
-    private readonly submissionsService:
-      SubmissionsService,
-  ) {}
-
-  /* =======================================================
-     SUBMIT CODE
-
-     POST /api/v1/submissions
-
-     Supports:
-     - C
-     - C++
-  ======================================================= */
+  constructor(private readonly submissionsService: SubmissionsService) {}
 
   @Post()
-  submit(
-    @Body()
-    body: SubmissionRequest,
-  ) {
-    return this.submissionsService.submit(
-      body,
-    );
+  submit(@Body() body: SubmissionRequest, @CurrentUser() user?: AuthenticatedUser) {
+    return this.submissionsService.submit(body, user?.id ?? null);
   }
 }

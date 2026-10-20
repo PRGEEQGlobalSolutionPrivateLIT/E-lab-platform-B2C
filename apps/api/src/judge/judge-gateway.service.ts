@@ -17,6 +17,7 @@ export interface JobPayload {
   priority?: 'normal' | 'high';
   rejudgeJobId?: string | null;
   rejudgeOfId?: string | null;
+  payload?: unknown;
 }
 
 export interface RunRecord {
@@ -208,7 +209,10 @@ export class JudgeGateway implements OnModuleInit, OnModuleDestroy {
     return worker;
   }
 
-  private acquire(runId: string, priority: 'normal' | 'high'): Promise<Worker> {
+    private acquire(runId: string, priority: 'normal' | 'high'): Promise<Worker> {
+    if (!this.paused && !this.workers.some((worker) => worker.status === 'online')) {
+      return Promise.reject(new ServiceUnavailableException('The code judge is offline. Try again in a few minutes.'));
+    }
     if (!this.paused && this.waiting.length === 0) {
       const worker = this.pick();
       if (worker) return Promise.resolve(this.take(worker));
