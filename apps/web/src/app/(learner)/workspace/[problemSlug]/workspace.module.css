@@ -9,7 +9,7 @@
 ========================================================= */
 
 .workspace {
-  width: 100vw;
+  width: 100%;
   height: 100vh;
 
   min-width: 0;
@@ -20,9 +20,9 @@
 
   overflow: hidden;
 
-  color: #1e293b;
+  color: #31344b;
 
-  background: #e7ecf2;
+  background: #dfe6e9;
 }
 
 /* =========================================================
@@ -51,7 +51,7 @@
 
   z-index: 20;
 
-  background: #e7ecf2;
+  background: #dfe6e9;
 
   border-bottom:
     1px solid
@@ -117,11 +117,11 @@
 
   border-radius: 12px;
 
-  color: #475569;
+  color: #5a5f74;
 
-  background: #e7ecf2;
+  background: #dfe6e9;
 
-  font-size: 11px;
+  font-size: 13px;
 
   font-weight: 700;
 
@@ -134,16 +134,11 @@
         0.62
       ),
     -5px -5px 10px
-      rgba(
-        255,
-        255,
-        255,
-        0.95
-      );
+      #ffffff;
 }
 
 .backButton:hover {
-  color: #2563eb;
+  color: #2d4cc8;
 
   transform:
     translateY(-1px);
@@ -162,12 +157,7 @@
         0.58
       ),
     inset -3px -3px 7px
-      rgba(
-        255,
-        255,
-        255,
-        0.95
-      );
+      #ffffff;
 }
 
 .backButton svg {
@@ -198,11 +188,11 @@
 
   flex-shrink: 0;
 
-  color: #2563eb;
+  color: #2d4cc8;
 
   border-radius: 11px;
 
-  background: #e7ecf2;
+  background: #dfe6e9;
 
   box-shadow:
     inset 3px 3px 7px
@@ -213,12 +203,7 @@
         0.52
       ),
     inset -3px -3px 7px
-      rgba(
-        255,
-        255,
-        255,
-        0.94
-      );
+      #ffffff;
 }
 
 .problemTitle div {
@@ -231,11 +216,11 @@
 .problemTitle strong {
   overflow: hidden;
 
-  color: #1e293b;
+  color: #31344b;
 
-  font-size: 13px;
+  font-size: 14px;
 
-  font-weight: 800;
+  font-weight: 700;
 
   line-height: 1.2;
 
@@ -247,9 +232,9 @@
 .problemTitle span {
   margin-top: 3px;
 
-  color: #64748b;
+  color: #5a5f74;
 
-  font-size: 9px;
+  font-size: 11px;
 
   font-weight: 600;
 }
@@ -285,17 +270,17 @@
 
   border-radius: 12px;
 
-  font-size: 10px;
+  font-size: 12px;
 
-  font-weight: 750;
+  font-weight: 700;
 
   white-space: nowrap;
 }
 
 .runButton {
-  color: #334155;
+  color: #31344b;
 
-  background: #e7ecf2;
+  background: #dfe6e9;
 
   box-shadow:
     5px 5px 10px
@@ -306,16 +291,11 @@
         0.58
       ),
     -5px -5px 10px
-      rgba(
-        255,
-        255,
-        255,
-        0.94
-      );
+      #ffffff;
 }
 
 .runButton:hover:not(:disabled) {
-  color: #2563eb;
+  color: #2d4cc8;
 
   transform:
     translateY(-1px);
@@ -334,25 +314,17 @@
         0.55
       ),
     inset -3px -3px 7px
-      rgba(
-        255,
-        255,
-        255,
-        0.94
-      );
+      #ffffff;
 }
 
 .submitButton {
   color: #ffffff;
 
-  background: #2563eb;
+  background: #2d4cc8;
 
   box-shadow:
     4px 4px 9px
-      rgba(
-        37,
-        99,
-        235,
+      rgba(45, 76, 200,
         0.27
       ),
     -3px -3px 7px
@@ -365,7 +337,7 @@
 }
 
 .submitButton:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: #243fa8;
 
   transform:
     translateY(-1px);
@@ -440,7 +412,7 @@
 
   overflow: hidden;
 
-  background: #e7ecf2;
+  background: #dfe6e9;
 }
 
 /* =========================================================
@@ -464,7 +436,7 @@
 
   position: relative;
 
-  background: #e7ecf2;
+  background: #dfe6e9;
 
   border-right:
     1px solid
@@ -494,13 +466,13 @@
 
   border-radius: 12px;
 
-  color: #334155;
+  color: #31344b;
 
-  background: #e7ecf2;
+  background: #dfe6e9;
 
-  font-size: 10px;
+  font-size: 12px;
 
-  font-weight: 800;
+  font-weight: 700;
 
   letter-spacing: 0.2px;
 
@@ -513,12 +485,7 @@
         0.58
       ),
     -4px -4px 9px
-      rgba(
-        255,
-        255,
-        255,
-        0.94
-      );
+      #ffffff;
 }
 
 /* =========================================================
@@ -543,7 +510,7 @@
 
   border-radius: 16px;
 
-  background: #e7ecf2;
+  background: #dfe6e9;
 
   box-shadow:
     inset 4px 4px 9px
@@ -554,12 +521,7 @@
         0.48
       ),
     inset -4px -4px 9px
-      rgba(
-        255,
-        255,
-        255,
-        0.91
-      );
+      #ffffff;
 
   scrollbar-width: thin;
 
@@ -595,13 +557,13 @@
 
   border-radius: 9px;
 
-  color: #15803d;
+  color: #1d7f55;
 
-  background: #e7ecf2;
+  background: #dfe6e9;
 
-  font-size: 8px;
+  font-size: 11px;
 
-  font-weight: 850;
+  font-weight: 700;
 
   letter-spacing: 0.5px;
 
@@ -616,12 +578,7 @@
         0.5
       ),
     inset -3px -3px 6px
-      rgba(
-        255,
-        255,
-        255,
-        0.94
-      );
+      #ffffff;
 }
 
 /* =========================================================
@@ -634,13 +591,13 @@
     0
     0;
 
-  color: #172033;
+  color: #31344b;
 
   font-size: 23px;
 
   line-height: 1.25;
 
-  font-weight: 800;
+  font-weight: 700;
 
   letter-spacing: -0.35px;
 }
@@ -655,9 +612,9 @@
     0
     0;
 
-  color: #475569;
+  color: #5a5f74;
 
-  font-size: 11px;
+  font-size: 13px;
 
   line-height: 1.75;
 
@@ -674,11 +631,11 @@
     0
     0;
 
-  color: #334155;
+  color: #31344b;
 
-  font-size: 11px;
+  font-size: 13px;
 
-  font-weight: 800;
+  font-weight: 700;
 
   letter-spacing: 0.1px;
 }
@@ -703,11 +660,11 @@
 
   border-radius: 9px;
 
-  color: #2563eb;
+  color: #2d4cc8;
 
-  background: #e7ecf2;
+  background: #dfe6e9;
 
-  font-size: 8px;
+  font-size: 11px;
 
   font-weight: 700;
 
@@ -720,12 +677,7 @@
         0.55
       ),
     -3px -3px 7px
-      rgba(
-        255,
-        255,
-        255,
-        0.93
-      );
+      #ffffff;
 }
 
 /* =========================================================
@@ -743,7 +695,7 @@
 
   border-radius: 13px;
 
-  background: #e7ecf2;
+  background: #dfe6e9;
 
   box-shadow:
     4px 4px 9px
@@ -754,12 +706,7 @@
         0.56
       ),
     -4px -4px 9px
-      rgba(
-        255,
-        255,
-        255,
-        0.94
-      );
+      #ffffff;
 }
 
 .problemPanelContent
@@ -770,11 +717,11 @@
 .contextBox > span {
   display: block;
 
-  color: #2563eb;
+  color: #2d4cc8;
 
-  font-size: 8px;
+  font-size: 11px;
 
-  font-weight: 850;
+  font-weight: 700;
 
   letter-spacing: 0.6px;
 
@@ -789,9 +736,9 @@
 
   overflow-wrap: anywhere;
 
-  color: #64748b;
+  color: #5a5f74;
 
-  font-size: 9px;
+  font-size: 11px;
 
   line-height: 1.6;
 
@@ -827,7 +774,7 @@
 
   overflow: hidden;
 
-  background: #0f172a;
+  background: #31344b;
 }
 
 /* =========================================================
@@ -857,15 +804,15 @@
 
   background: #172235;
 
-  font-size: 10px;
+  font-size: 12px;
 
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .editorHeader span:first-child {
   color: #f8fafc;
 
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .editorHeader span:last-child {
@@ -875,7 +822,7 @@
 
   color: #7185a3;
 
-  font-size: 9px;
+  font-size: 11px;
 
   font-weight: 600;
 
@@ -932,9 +879,9 @@
 
   background: #172235;
 
-  font-size: 10px;
+  font-size: 12px;
 
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .inputHeader span:first-child {
@@ -944,9 +891,9 @@
 .inputHeader span:last-child {
   margin-left: auto;
 
-  color: #64748b;
+  color: #5a5f74;
 
-  font-size: 8px;
+  font-size: 11px;
 
   font-weight: 600;
 
@@ -983,7 +930,7 @@
     'Courier New',
     monospace;
 
-  font-size: 11px;
+  font-size: 13px;
 
   line-height: 1.5;
 
@@ -993,12 +940,12 @@
   scrollbar-width: thin;
 
   scrollbar-color:
-    #334155
+    #31344b
     #101827;
 }
 
 .inputEditor::placeholder {
-  color: #475569;
+  color: #5a5f74;
 }
 
 .inputEditor:focus {
@@ -1017,7 +964,7 @@
 .inputEditor::-webkit-scrollbar-thumb {
   border-radius: 999px;
 
-  background: #334155;
+  background: #31344b;
 }
 
 /* =========================================================
@@ -1066,9 +1013,9 @@
 
   background: #172235;
 
-  font-size: 10px;
+  font-size: 12px;
 
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .consoleHeader span:first-child {
@@ -1078,9 +1025,9 @@
 .consoleHeader span:last-child {
   margin-left: auto;
 
-  color: #64748b;
+  color: #5a5f74;
 
-  font-size: 8px;
+  font-size: 11px;
 
   font-weight: 600;
 
@@ -1109,7 +1056,7 @@
   overflow-x: auto;
   overflow-y: auto;
 
-  color: #94a3b8;
+  color: #7a7f94;
 
   background: #101827;
 
@@ -1119,7 +1066,7 @@
     'Courier New',
     monospace;
 
-  font-size: 10px;
+  font-size: 12px;
 
   line-height: 1.7;
 
@@ -1132,7 +1079,7 @@
   scrollbar-width: thin;
 
   scrollbar-color:
-    #334155
+    #31344b
     #101827;
 }
 
@@ -1148,7 +1095,7 @@
 .consoleBody::-webkit-scrollbar-thumb {
   border-radius: 999px;
 
-  background: #334155;
+  background: #31344b;
 }
 
 /* =========================================================
@@ -1167,19 +1114,19 @@
 
   gap: 17px;
 
-  color: #334155;
+  color: #31344b;
 
-  background: #e7ecf2;
+  background: #dfe6e9;
 }
 
 .notFound h1 {
   margin: 0;
 
-  color: #1e293b;
+  color: #31344b;
 
   font-size: 24px;
 
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .notFound button {
@@ -1193,13 +1140,13 @@
 
   border-radius: 12px;
 
-  color: #2563eb;
+  color: #2d4cc8;
 
-  background: #e7ecf2;
+  background: #dfe6e9;
 
-  font-size: 11px;
+  font-size: 13px;
 
-  font-weight: 750;
+  font-weight: 700;
 
   cursor: pointer;
 
@@ -1212,12 +1159,7 @@
         0.6
       ),
     -5px -5px 10px
-      rgba(
-        255,
-        255,
-        255,
-        0.94
-      );
+      #ffffff;
 }
 
 /* =========================================================
@@ -1397,7 +1339,7 @@
       0
       10px;
 
-    font-size: 9px;
+    font-size: 11px;
   }
 
   .problemTitle > svg {
@@ -1410,11 +1352,11 @@
   .problemTitle strong {
     max-width: 145px;
 
-    font-size: 10px;
+    font-size: 12px;
   }
 
   .problemTitle span {
-    font-size: 8px;
+    font-size: 11px;
   }
 
   .workspaceActions {
@@ -1446,7 +1388,7 @@
   }
 
   .statement {
-    font-size: 10px;
+    font-size: 12px;
   }
 
   .contextBox {
@@ -1481,7 +1423,7 @@
   justify-content: space-between;
   margin-bottom: 12px;
   color: #f9fafb;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -1500,7 +1442,7 @@
   background: #0b1220;
   color: #60a5fa;
   font-family: Consolas, monospace;
-  font-size: 13px;
+  font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
   text-decoration: none;
@@ -1576,7 +1518,7 @@
     Arial,
     sans-serif;
 
-  font-size: 11px;
+  font-size: 13px;
 
   font-weight: 600;
 }
@@ -1588,9 +1530,9 @@
 > span:first-child {
   color: #f3f3f3;
 
-  font-size: 11px;
+  font-size: 13px;
 
-  font-weight: 650;
+  font-weight: 600;
 
   letter-spacing: 0;
 }
@@ -1762,7 +1704,7 @@ button[aria-selected='true'] {
 
   background: #1e1e1e;
 
-  font-size: 11px;
+  font-size: 13px;
 
   line-height: 1.6;
 }
@@ -1904,6 +1846,6 @@ a:hover {
   button {
     min-width: 92px !important;
 
-    font-size: 11px !important;
+    font-size: 13px !important;
   }
 }

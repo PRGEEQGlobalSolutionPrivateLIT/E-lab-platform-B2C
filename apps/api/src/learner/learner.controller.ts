@@ -12,6 +12,16 @@ import { LearnerCatalogService } from './learner-catalog.service.js';
 export class LearnerController {
   constructor(private readonly catalog: LearnerCatalogService) {}
 
+  @Get('catalog')
+  getCatalog(@CurrentUser() user: AuthenticatedUser) {
+    return this.catalog.catalog(user.id);
+  }
+
+  @Get('stacks')
+  getStacks() {
+    return this.catalog.stacks();
+  }
+
   @Get('progress')
   async progress(@CurrentUser() user: AuthenticatedUser) {
     return { solved: await this.catalog.solvedSlugs(user.id) };

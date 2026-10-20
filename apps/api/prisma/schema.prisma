@@ -474,7 +474,12 @@ model Technology {
   fileExtension String             @default("")
   judgeLanguage String?
 
-  problems Problem[]
+  pathName        String?
+  pathShortName   String?
+  pathDescription String?
+
+  problems       Problem[]
+  practiceStages PracticeStage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -546,6 +551,8 @@ model Problem {
   pathSteps      LearningPathStep[]
   challengeItems ChallengeProblem[]
   batchItems     ContentBatchItem[]
+  practiceStages PracticeStageProblem[]
+  stackModules   StackModuleProblem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -644,6 +651,7 @@ model Domain {
   name            String
   description     String
   pathDescription String
+  position        Int    @default(0)
 
   stacks Stack[]
 
@@ -664,11 +672,81 @@ model Stack {
   description String
   technologies Json
   level       String
+  position    Int    @default(0)
+
+  modules StackModule[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("stacks")
+}
+
+model StackModule {
+  id             String  @id @default(cuid())
+  stackId        String
+  stack          Stack   @relation(fields: [stackId], references: [id], onDelete: Cascade)
+  slug           String
+  name           String
+  phase          String
+  description    String
+  technologySlug String?
+  topics         Json
+  position       Int
+
+  problems StackModuleProblem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([stackId, slug])
+  @@index([stackId, position])
+  @@map("stack_modules")
+}
+
+model StackModuleProblem {
+  id        String      @id @default(cuid())
+  moduleId  String
+  module    StackModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  problemId String
+  problem   Problem     @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  position  Int
+
+  @@unique([moduleId, problemId])
+  @@index([moduleId, position])
+  @@map("stack_module_problems")
+}
+
+model PracticeStage {
+  id           String     @id @default(cuid())
+  technologyId String
+  technology   Technology @relation(fields: [technologyId], references: [id], onDelete: Cascade)
+  slug         String     @unique
+  title        String
+  description  String
+  level        PathLevel
+  position     Int
+
+  problems PracticeStageProblem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([technologyId, position])
+  @@map("practice_stages")
+}
+
+model PracticeStageProblem {
+  id        String        @id @default(cuid())
+  stageId   String
+  stage     PracticeStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  problemId String
+  problem   Problem       @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  position  Int
+
+  @@unique([stageId, problemId])
+  @@index([stageId, position])
+  @@map("practice_stage_problems")
 }
 
 model LearningPath {

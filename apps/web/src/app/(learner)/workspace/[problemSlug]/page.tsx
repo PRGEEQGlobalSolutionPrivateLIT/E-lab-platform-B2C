@@ -456,9 +456,8 @@ export default function CodingWorkspacePage() {
 
   const problemSlug = params.problemSlug;
 
-  const staticProblem = getProblemBySlug(problemSlug);
-  const remote = useRemoteProblem(staticProblem ? null : problemSlug);
-  const problem = staticProblem ?? remote.problem ?? undefined;
+  const remote = useRemoteProblem(problemSlug);
+  const problem = remote.problem ?? undefined;
 
   /* =======================================================
      URL CONTEXT
@@ -610,7 +609,7 @@ export default function CodingWorkspacePage() {
   ======================================================= */
 
   useEffect(() => {
-    const selectedProblem = getProblemBySlug(problemSlug) ?? remote.problem ?? undefined;
+    const selectedProblem = remote.problem ?? undefined;
 
     const nextCode = selectedProblem?.starterCode ?? selectedProblem?.starterFiles?.[0]?.content ?? "";
 
@@ -644,7 +643,7 @@ export default function CodingWorkspacePage() {
     setReactPreviewUrl("");
   }, [problemSlug, remote.problem]);
 
-  if (!problem && remote.loading) {
+  if (remote.loading) {
     return (
       <main className={styles.notFound}>
         <Loader2 />

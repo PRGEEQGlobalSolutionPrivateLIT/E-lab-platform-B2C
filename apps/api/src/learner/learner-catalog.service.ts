@@ -30,7 +30,9 @@ const SUMMARY_SELECT = {
   skills: true,
   estimatedMinutes: true,
   defaultLanguage: true,
+  allowedLanguages: true,
   organizationId: true,
+  createdById: true,
   technology: { select: { slug: true, name: true } },
 } satisfies Prisma.ProblemSelect;
 
@@ -40,6 +42,37 @@ export interface LearnerScope {
   organizationId: string | null;
   groupId?: string | null;
   institution: { id: string; name: string } | null;
+}
+
+const LEVEL_LABEL = {
+  beginner: 'Beginner',
+  intermediate: 'Intermediate',
+  advanced: 'Advanced',
+} as const;
+
+export interface PracticeStageView {
+  slug: string;
+  title: string;
+  description: string;
+  level: (typeof LEVEL_LABEL)[keyof typeof LEVEL_LABEL];
+  order: number;
+  problemSlugs: string[];
+}
+
+export interface PracticePathView {
+  technologySlug: string;
+  name: string;
+  shortName: string;
+  description: string;
+  stages: PracticeStageView[];
+}
+
+export interface PathTechnology {
+  slug: string;
+  name: string;
+  pathName?: string | null;
+  pathShortName?: string | null;
+  pathDescription?: string | null;
 }
 
 const strings = (value: Prisma.JsonValue | null) =>
@@ -74,7 +107,6 @@ export class LearnerCatalogService {
     return {
       status: 'published',
       visibility: 'listed',
-      defaultLanguage: { in: [...DB_JUDGED_LANGUAGES] },
       OR: [
         { organizationId: null },
         ...(scope.organizationId
@@ -97,6 +129,7 @@ export class LearnerCatalogService {
       skills: strings(row.skills),
       estimatedMinutes: row.estimatedMinutes,
       defaultLanguage: row.defaultLanguage,
+      allowedLanguages: strings(row.allowedLanguages).length ? strings(row.allowedLanguages) : [row.defaultLanguage],
       source: row.organizationId
         ? ('institution' as const)
         : ('platform' as const),
@@ -138,8 +171,10 @@ export class LearnerCatalogService {
         outputFormat: true,
         constraints: true,
         notes: true,
-        allowedLanguages: true,
         starterCode: true,
+        starterFiles: true,
+        sampleTests: true,
+        config: true,
         testCases: {
           where: { hidden: false, enabled: true },
           orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
@@ -148,6 +183,9 @@ export class LearnerCatalogService {
       },
     });
     if (!row) throw new NotFoundException('Problem not found.');
+    const authored = Array.isArray(row.sampleTests) ? (row.sampleTests as Array<Record<string, unknown>>) : [];
+    const config = row.config && typeof row.config === 'object' && !Array.isArray(row.config) ? (row.config as Record<string, unknown>) : {};
+    const text = (value: unknown) => (typeof value === 'string' ? value : undefined);
     return {
       ...this.summary(row, scope),
       problemStatement: row.problemStatement,
@@ -155,16 +193,166 @@ export class LearnerCatalogService {
       outputFormat: row.outputFormat ?? undefined,
       constraints: strings(row.constraints),
       notes: strings(row.notes),
-      allowedLanguages: strings(row.allowedLanguages).length
-        ? strings(row.allowedLanguages)
-        : [row.defaultLanguage],
       starterCode: row.starterCode ?? undefined,
-      sampleTests: row.testCases.map((test, index) => ({
-        id: test.id,
-        title: `Sample ${index + 1}`,
-        input: test.input ?? undefined,
-        expectedOutput: test.expectedOutput,
+      starterFiles: Array.isArray(row.starterFiles) ? row.starterFiles : undefined,
+      powerBi: config.powerBi ?? undefined,
+      sampleTests: row.testCases.length
+        ? row.testCases.map((test, index) => ({
+            id: test.id,
+            title: text(authored[index]?.title) ?? `Sample ${index + 1}`,
+            description: text(authored[index]?.description),
+            input: test.input ?? undefined,
+            expectedOutput: test.expectedOutput,
+          }))
+        : authored,
+    };
+  }
+
+  async catalog(userId: string) {
+    const scope = await this.scope(userId);
+    const [rows, stages] = await Promise.all([
+      this.prisma.problem.findMany({
+        where: this.visibleWhere(scope),
+        orderBy: [{ title: 'asc' }],
+        select: SUMMARY_SELECT,
+      }),
+      this.prisma.practiceStage.findMany({
+        orderBy: [{ technologyId: 'asc' }, { position: 'asc' }],
+        select: {
+          slug: true,
+          title: true,
+          description: true,
+          level: true,
+          position: true,
+          technology: { select: { slug: true, name: true, pathName: true, pathShortName: true, pathDescription: true } },
+          problems: { orderBy: { position: 'asc' }, select: { problem: { select: { slug: true } } } },
+        },
+      }),
+    ]);
+    const visible = new Set(rows.map((row) => row.slug));
+    const staged = new Set(stages.flatMap((stage) => stage.problems.map((link) => link.problem.slug)));
+    const paths = new Map<string, PracticePathView>();
+    const pathFor = (technology: PathTechnology) => {
+      const existing = paths.get(technology.slug);
+      if (existing) return existing;
+      const created: PracticePathView = {
+        technologySlug: technology.slug,
+        name: technology.pathName ?? technology.name,
+        shortName: technology.pathShortName ?? technology.name,
+        description: technology.pathDescription ?? `Practice problems for ${technology.name}.`,
+        stages: [],
+      };
+      paths.set(technology.slug, created);
+      return created;
+    };
+    for (const stage of stages) {
+      pathFor(stage.technology).stages.push({
+        slug: stage.slug,
+        title: stage.title,
+        description: stage.description,
+        level: LEVEL_LABEL[stage.level],
+        order: stage.position + 1,
+        problemSlugs: stage.problems.map((link) => link.problem.slug).filter((slug) => visible.has(slug)),
+      });
+    }
+    const uploaded = new Map<string, { technology: PathTechnology; institution: string[]; platform: string[] }>();
+    for (const row of rows) {
+      if (staged.has(row.slug) || (row.organizationId === null && row.createdById === null)) continue;
+      const entry = uploaded.get(row.technology.slug) ?? { technology: row.technology, institution: [], platform: [] };
+      (row.organizationId ? entry.institution : entry.platform).push(row.slug);
+      uploaded.set(row.technology.slug, entry);
+    }
+    for (const { technology, institution, platform } of uploaded.values()) {
+      const path = pathFor(technology);
+      let order = path.stages.reduce((max, stage) => Math.max(max, stage.order), 0);
+      if (institution.length) {
+        path.stages.push({
+          slug: `${technology.slug}-institution`,
+          title: `From ${scope.institution?.name ?? 'your institution'}`,
+          description: 'Published by your institution for its learners.',
+          level: 'Intermediate',
+          order: (order += 1),
+          problemSlugs: institution,
+        });
+      }
+      if (platform.length) {
+        path.stages.push({
+          slug: `${technology.slug}-more`,
+          title: 'More problems',
+          description: 'Recently published practice problems.',
+          level: 'Intermediate',
+          order: (order += 1),
+          problemSlugs: platform,
+        });
+      }
+    }
+    return {
+      institution: scope.institution,
+      problems: rows.map((row) => this.summary(row, scope)),
+      practicePaths: [...paths.values()].filter((path) => path.stages.some((stage) => stage.problemSlugs.length)),
+    };
+  }
+
+  async stacks() {
+    const [domains, stacks] = await Promise.all([
+      this.prisma.domain.findMany({
+        orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+        select: { slug: true, name: true, description: true, pathDescription: true },
+      }),
+      this.prisma.stack.findMany({
+        orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+        select: {
+          slug: true,
+          name: true,
+          shortName: true,
+          description: true,
+          technologies: true,
+          level: true,
+          domain: { select: { slug: true } },
+          modules: {
+            orderBy: { position: 'asc' },
+            select: {
+              slug: true,
+              name: true,
+              phase: true,
+              description: true,
+              technologySlug: true,
+              topics: true,
+              problems: { orderBy: { position: 'asc' }, select: { problem: { select: { slug: true } } } },
+            },
+          },
+        },
+      }),
+    ]);
+    return {
+      domains,
+      stacks: stacks.map((stack) => ({
+        slug: stack.slug,
+        domainSlug: stack.domain.slug,
+        name: stack.name,
+        shortName: stack.shortName,
+        description: stack.description,
+        technologies: strings(stack.technologies),
+        level: stack.level,
       })),
+      roadmaps: stacks
+        .filter((stack) => stack.modules.length)
+        .map((stack) => ({
+          stackSlug: stack.slug,
+          modules: stack.modules.map((module) => ({
+            slug: module.slug,
+            name: module.name,
+            phase: module.phase,
+            description: module.description,
+            technologySlug: module.technologySlug ?? undefined,
+            topics: strings(module.topics),
+          })),
+        })),
+      mappings: Object.fromEntries(
+        stacks.flatMap((stack) =>
+          stack.modules.map((module) => [`${stack.slug}:${module.slug}`, module.problems.map((link) => link.problem.slug)]),
+        ),
+      ),
     };
   }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, BookOpen, Braces, Code2, Layers3, LogOut, Trophy, UserRound } from "lucide-react";
+import { ArrowLeft, BookOpen, Code2 } from "lucide-react";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -367,18 +367,6 @@ export default function TechnologyPracticePage() {
   const progress = totalProblems > 0 ? Math.round((solvedProblems / totalProblems) * 100) : 0;
 
   /* =======================================================
-     LOGOUT
-  ======================================================= */
-
-  const logout = () => {
-    localStorage.removeItem("elab_dummy_auth");
-
-    localStorage.removeItem("elab_dummy_user");
-
-    router.replace("/login");
-  };
-
-  /* =======================================================
      NOT FOUND
   ======================================================= */
 
@@ -406,69 +394,6 @@ export default function TechnologyPracticePage() {
 
   return (
     <main className={styles.page}>
-      {/* =================================================
-          HEADER
-      ================================================= */}
-
-      <header className={styles.header}>
-        <div className={styles.headerInner}>
-          {/* =============================================
-              LOGO
-          ============================================= */}
-
-          <button type="button" className={styles.logoArea} onClick={() => router.push("/dashboard")}>
-            <div className={styles.logoIcon}>
-              <Braces />
-            </div>
-
-            <div className={styles.logo}>
-              e<span>Lab</span>
-            </div>
-          </button>
-
-          {/* =============================================
-              NAVIGATION
-          ============================================= */}
-
-          <nav className={styles.navShell}>
-            <button type="button" className={`${styles.navButton} ${styles.activeNav}`} onClick={() => router.push("/dashboard")}>
-              <Code2 />
-              Start Practicing
-            </button>
-
-            <button type="button" className={styles.navButton} onClick={() => router.push("/stacks")}>
-              <Layers3 />
-              Targeted Stack
-            </button>
-
-            <button type="button" className={styles.navButton} onClick={() => router.push("/challenges")}>
-              <Trophy />
-              Real-Time Challenges
-            </button>
-          </nav>
-
-          {/* =============================================
-              USER
-          ============================================= */}
-
-          <div className={styles.userArea}>
-            <div className={styles.avatar}>
-              <UserRound />
-            </div>
-
-            <div className={styles.userText}>
-              <strong>Learner</strong>
-
-              <span>Practice Workspace</span>
-            </div>
-
-            <button type="button" className={styles.logoutButton} onClick={logout}>
-              <LogOut />
-            </button>
-          </div>
-        </div>
-      </header>
-
       {/* =================================================
           CONTENT
       ================================================= */}

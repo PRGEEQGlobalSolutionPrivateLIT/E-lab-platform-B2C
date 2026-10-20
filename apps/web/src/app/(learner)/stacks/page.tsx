@@ -4,17 +4,12 @@ import {
   ArrowRight,
   BarChart3,
   BrainCircuit,
-  Braces,
   Cloud,
   Code2,
   Database,
-  GitBranch,
   Layers3,
   LockKeyhole,
-  LogOut,
   Smartphone,
-  Trophy,
-  UserRound,
   Workflow,
 } from 'lucide-react';
 
@@ -138,160 +133,12 @@ export default function StacksPage() {
       );
     }, [search]);
 
-  /* =======================================================
-     LOGOUT
-  ======================================================= */
-
-  const logout = () => {
-    localStorage.removeItem(
-      'elab_dummy_auth',
-    );
-
-    localStorage.removeItem(
-      'elab_dummy_user',
-    );
-
-    router.replace('/login');
-  };
-
   if (checkingAuth) {
     return null;
   }
 
   return (
     <main className={styles.page}>
-      {/* =================================================
-          TOP HEADER
-      ================================================= */}
-
-      <header className={styles.header}>
-        <div
-          className={
-            styles.headerInner
-          }
-        >
-          {/* LOGO */}
-
-          <button
-            className={
-              styles.logoArea
-            }
-            onClick={() =>
-              router.push(
-                '/dashboard',
-              )
-            }
-          >
-            <div
-              className={
-                styles.logoIcon
-              }
-            >
-              <Braces />
-            </div>
-
-            <div
-              className={
-                styles.logo
-              }
-            >
-              e<span>Lab</span>
-            </div>
-          </button>
-
-          {/* NAVIGATION */}
-
-          <nav
-            className={
-              styles.navShell
-            }
-          >
-            <button
-              className={
-                styles.navButton
-              }
-              onClick={() =>
-                router.push(
-                  '/dashboard',
-                )
-              }
-            >
-              <Code2 />
-              Start Practicing
-            </button>
-
-            <button
-              className={`${styles.navButton} ${styles.activeNav}`}
-            >
-              <Layers3 />
-              Targeted Stack
-            </button>
-
-            <button
-              className={
-                styles.navButton
-              }
-              onClick={() =>
-                router.push(
-                  '/challenges',
-                )
-              }
-            >
-              <Trophy />
-              Real-Time Challenges
-            </button>
-          </nav>
-
-          {/* USER */}
-
-          <div
-            className={
-              styles.userArea
-            }
-          >
-            <div
-              className={
-                styles.avatar
-              }
-            >
-              <UserRound />
-            </div>
-
-            <div
-              className={
-                styles.userText
-              }
-            >
-              <span
-                className={
-                  styles.userName
-                }
-              >
-                Learner
-              </span>
-
-              <span
-                className={
-                  styles.userRole
-                }
-              >
-                Practice Workspace
-              </span>
-            </div>
-
-            <button
-              className={
-                styles.logout
-              }
-              onClick={logout}
-              aria-label="Logout"
-            >
-              <LogOut />
-            </button>
-          </div>
-        </div>
-      </header>
-
       {/* =================================================
           MAIN
       ================================================= */}

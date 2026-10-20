@@ -1,18 +1,17 @@
 .page {
-  min-height: 100vh;
+  min-height: auto;
 
   padding-bottom: 70px;
 
-  color: #1e293b;
+  color: #31344b;
 
-  background: #e7ecf2;
+  background: transparent;
 }
 
 .container,
 .headerInner {
-  width: calc(100% - 40px);
-
-  max-width: 1360px;
+  width: 100%;
+  max-width: none;
 
   margin-left: auto;
   margin-right: auto;
@@ -48,13 +47,13 @@
 
   border-radius: 20px;
 
-  background: #e7ecf2;
+  background: #dfe6e9;
 
   box-shadow:
     7px 7px 16px
-      rgba(184, 193, 203, 0.56),
+      #c6c9cf,
     -7px -7px 16px
-      rgba(255, 255, 255, 0.95);
+      #ffffff;
 }
 
 .logoArea {
@@ -84,13 +83,13 @@
 
   border-radius: 12px;
 
-  color: #2563eb;
+  color: #2d4cc8;
 
   box-shadow:
     4px 4px 9px
-      rgba(184, 193, 203, 0.56),
+      #c6c9cf,
     -4px -4px 9px
-      rgba(255, 255, 255, 0.94);
+      #ffffff;
 }
 
 .logoIcon svg {
@@ -99,17 +98,17 @@
 }
 
 .logo {
-  color: #1e293b;
+  color: #31344b;
 
   font-size: 24px;
 
-  font-weight: 800;
+  font-weight: 700;
 
   letter-spacing: -0.7px;
 }
 
 .logo span {
-  color: #2563eb;
+  color: #2d4cc8;
 }
 
 /* =========================================================
@@ -130,9 +129,9 @@
 
   box-shadow:
     inset 3px 3px 7px
-      rgba(184, 193, 203, 0.48),
+      #c6c9cf,
     inset -3px -3px 7px
-      rgba(255, 255, 255, 0.94);
+      #ffffff;
 }
 
 .navButton {
@@ -150,13 +149,13 @@
   border: 0;
   border-radius: 9px;
 
-  color: #64748b;
+  color: #5a5f74;
 
   background: transparent;
 
-  font-size: 12px;
+  font-size: 13px;
 
-  font-weight: 650;
+  font-weight: 600;
 
   white-space: nowrap;
 
@@ -169,13 +168,13 @@
 }
 
 .activeNav {
-  color: #2563eb;
+  color: #2d4cc8;
 
   box-shadow:
     3px 3px 7px
-      rgba(184, 193, 203, 0.54),
+      #c6c9cf,
     -3px -3px 7px
-      rgba(255, 255, 255, 0.95);
+      #ffffff;
 }
 
 /* =========================================================
@@ -201,13 +200,13 @@
 
   border-radius: 11px;
 
-  color: #2563eb;
+  color: #2d4cc8;
 
   box-shadow:
     inset 3px 3px 7px
-      rgba(184, 193, 203, 0.48),
+      #c6c9cf,
     inset -3px -3px 7px
-      rgba(255, 255, 255, 0.94);
+      #ffffff;
 }
 
 .avatar svg {
@@ -221,17 +220,17 @@
 }
 
 .userText strong {
-  color: #334155;
+  color: #31344b;
 
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .userText span {
   margin-top: 2px;
 
-  color: #94a3b8;
+  color: #7a7f94;
 
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .logoutButton {
@@ -247,17 +246,17 @@
   border: 0;
   border-radius: 11px;
 
-  color: #64748b;
+  color: #5a5f74;
 
-  background: #e7ecf2;
+  background: #dfe6e9;
 
   cursor: pointer;
 
   box-shadow:
     4px 4px 8px
-      rgba(184, 193, 203, 0.54),
+      #c6c9cf,
     -4px -4px 8px
-      rgba(255, 255, 255, 0.94);
+      #ffffff;
 }
 
 .logoutButton svg {
@@ -270,7 +269,7 @@
 ========================================================= */
 
 .backButton {
-  margin-top: 34px;
+  margin-top: 0;
 
   min-height: 38px;
 
@@ -286,21 +285,21 @@
   border: 0;
   border-radius: 10px;
 
-  color: #64748b;
+  color: #5a5f74;
 
-  background: #e7ecf2;
+  background: #dfe6e9;
 
-  font-size: 11px;
+  font-size: 13px;
 
-  font-weight: 650;
+  font-weight: 600;
 
   cursor: pointer;
 
   box-shadow:
     3px 3px 7px
-      rgba(184, 193, 203, 0.52),
+      #c6c9cf,
     -3px -3px 7px
-      rgba(255, 255, 255, 0.93);
+      #ffffff;
 }
 
 .backButton svg {
@@ -332,9 +331,9 @@
 
   box-shadow:
     7px 7px 16px
-      rgba(184, 193, 203, 0.56),
+      #c6c9cf,
     -7px -7px 16px
-      rgba(255, 255, 255, 0.95);
+      #ffffff;
 }
 
 .heroIcon {
@@ -347,13 +346,13 @@
 
   border-radius: 18px;
 
-  color: #2563eb;
+  color: #2d4cc8;
 
   box-shadow:
     inset 5px 5px 10px
-      rgba(184, 193, 203, 0.52),
+      #c6c9cf,
     inset -5px -5px 10px
-      rgba(255, 255, 255, 0.95);
+      #ffffff;
 }
 
 .heroIcon svg {
@@ -362,11 +361,11 @@
 }
 
 .eyebrow {
-  color: #2563eb;
+  color: #2d4cc8;
 
-  font-size: 9px;
+  font-size: 11px;
 
-  font-weight: 850;
+  font-weight: 700;
 
   letter-spacing: 1px;
 
@@ -379,13 +378,13 @@
     0
     0;
 
-  color: #172033;
+  color: #31344b;
 
-  font-size: 34px;
+  font-size: 28px;
 
-  font-weight: 760;
+  font-weight: 700;
 
-  letter-spacing: -1px;
+  letter-spacing: -0.5px;
 }
 
 .heroContent p {
@@ -396,9 +395,9 @@
     0
     0;
 
-  color: #64748b;
+  color: #5a5f74;
 
-  font-size: 11px;
+  font-size: 13px;
 
   line-height: 1.65;
 }
@@ -421,9 +420,9 @@
 
   box-shadow:
     inset 4px 4px 9px
-      rgba(184, 193, 203, 0.49),
+      #c6c9cf,
     inset -4px -4px 9px
-      rgba(255, 255, 255, 0.94);
+      #ffffff;
 }
 
 .progressCard > div {
@@ -436,7 +435,7 @@
 }
 
 .progressCard strong {
-  color: #2563eb;
+  color: #2d4cc8;
 
   font-size: 18px;
 }
@@ -444,9 +443,9 @@
 .progressCard span {
   margin-top: 3px;
 
-  color: #94a3b8;
+  color: #7a7f94;
 
-  font-size: 8px;
+  font-size: 11px;
 }
 
 /* =========================================================
@@ -472,11 +471,11 @@
   border: 0;
   border-radius: 10px;
 
-  color: #64748b;
+  color: #5a5f74;
 
-  background: #e7ecf2;
+  background: #dfe6e9;
 
-  font-size: 10px;
+  font-size: 12px;
 
   font-weight: 700;
 
@@ -484,15 +483,15 @@
 
   box-shadow:
     3px 3px 7px
-      rgba(184, 193, 203, 0.5),
+      #c6c9cf,
     -3px -3px 7px
-      rgba(255, 255, 255, 0.92);
+      #ffffff;
 }
 
 .filterActive {
   color: #ffffff;
 
-  background: #2563eb;
+  background: #2d4cc8;
 
   box-shadow: none;
 }
@@ -517,9 +516,9 @@
 
   box-shadow:
     6px 6px 15px
-      rgba(184, 193, 203, 0.54),
+      #c6c9cf,
     -6px -6px 15px
-      rgba(255, 255, 255, 0.94);
+      #ffffff;
 }
 
 .stageHeader {
@@ -554,17 +553,17 @@
 
   border-radius: 12px;
 
-  color: #2563eb;
+  color: #2d4cc8;
 
-  font-size: 10px;
+  font-size: 12px;
 
-  font-weight: 800;
+  font-weight: 700;
 
   box-shadow:
     inset 3px 3px 7px
-      rgba(184, 193, 203, 0.48),
+      #c6c9cf,
     inset -3px -3px 7px
-      rgba(255, 255, 255, 0.94);
+      #ffffff;
 }
 
 .stageInfo {
@@ -578,17 +577,17 @@
 }
 
 .stageMeta span {
-  color: #2563eb;
+  color: #2d4cc8;
 
-  font-size: 8px;
+  font-size: 11px;
 
-  font-weight: 750;
+  font-weight: 700;
 
   text-transform: uppercase;
 }
 
 .stageMeta span:last-child {
-  color: #94a3b8;
+  color: #7a7f94;
 }
 
 .stageInfo h2 {
@@ -597,11 +596,11 @@
     0
     0;
 
-  color: #334155;
+  color: #31344b;
 
   font-size: 17px;
 
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .stageInfo p {
@@ -610,16 +609,16 @@
     0
     0;
 
-  color: #64748b;
+  color: #5a5f74;
 
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .stageIcon {
   width: 20px;
   height: 20px;
 
-  color: #94a3b8;
+  color: #7a7f94;
 }
 
 .problemArea {
@@ -631,7 +630,7 @@
 ========================================================= */
 
 .notFound {
-  min-height: 100vh;
+  min-height: 50vh;
 
   display: flex;
   flex-direction: column;
@@ -639,7 +638,7 @@
   align-items: center;
   justify-content: center;
 
-  color: #334155;
+  color: #31344b;
 
   text-align: center;
 }
@@ -648,7 +647,7 @@
   width: 40px;
   height: 40px;
 
-  color: #2563eb;
+  color: #2d4cc8;
 }
 
 .notFound h1 {
@@ -659,7 +658,7 @@
 }
 
 .notFound p {
-  color: #64748b;
+  color: #5a5f74;
 }
 
 .notFound button {
@@ -674,7 +673,7 @@
 
   color: #ffffff;
 
-  background: #2563eb;
+  background: #2d4cc8;
 
   cursor: pointer;
 }

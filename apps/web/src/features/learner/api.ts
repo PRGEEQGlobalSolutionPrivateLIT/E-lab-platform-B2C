@@ -2,8 +2,18 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { apiFetch } from '@/features/auth/apiFetch';
-import { getProblemBySlug, type PracticeProblem, type ProblemDifficulty, type ProblemLanguage, type WorkspaceType } from '@/features/problem-engine';
+import { setCatalog, setStacks, upsertProblem } from '@/features/catalog/store';
+import type {
+  PowerBIProblemConfig,
+  PracticeProblem,
+  ProblemDifficulty,
+  ProblemLanguage,
+  StarterFile,
+  WorkspaceType,
+} from '@/features/problem-engine';
+import type { TechnologyPracticePath } from '@/features/practice-path-engine';
 import { markProblemSolved } from '@/features/progress/local-progress';
+import type { StackDefinition, StackDomain, StackRoadmap } from '@/features/stack-engine';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
@@ -24,6 +34,7 @@ export interface LearnerProblemSummary {
   skills: string[];
   estimatedMinutes: number;
   defaultLanguage: ProblemLanguage;
+  allowedLanguages?: ProblemLanguage[];
   source: 'platform' | 'institution';
   institutionName: string | null;
 }
@@ -36,7 +47,9 @@ export interface LearnerProblemDetail extends LearnerProblemSummary {
   notes: string[];
   allowedLanguages: ProblemLanguage[];
   starterCode?: string;
-  sampleTests: { id: string; title: string; input?: string; expectedOutput?: string }[];
+  starterFiles?: StarterFile[];
+  powerBi?: PowerBIProblemConfig;
+  sampleTests: { id: string; title: string; description?: string; input?: string; expectedOutput?: string }[];
 }
 
 export interface LearnerBatchProblem {
@@ -63,6 +76,19 @@ export interface LearnerBatch {
   solvedCount: number;
 }
 
+interface CatalogResponse {
+  institution: LearnerInstitution | null;
+  problems: LearnerProblemSummary[];
+  practicePaths: TechnologyPracticePath[];
+}
+
+interface StacksResponse {
+  domains: StackDomain[];
+  stacks: StackDefinition[];
+  roadmaps: StackRoadmap[];
+  mappings: Record<string, string[]>;
+}
+
 async function learnerGet<T>(path: string): Promise<T> {
   const response = await apiFetch(`${API_BASE}${path}`);
   if (!response.ok) throw new Error(`Request failed (${response.status})`);
@@ -72,6 +98,7 @@ async function learnerGet<T>(path: string): Promise<T> {
 export function toPracticeProblem(problem: LearnerProblemSummary | LearnerBatchProblem | LearnerProblemDetail): PracticeProblem {
   const detail = 'problemStatement' in problem ? problem : null;
   const language = 'defaultLanguage' in problem ? problem.defaultLanguage : (problem.technologySlug as ProblemLanguage);
+  const allowed = 'allowedLanguages' in problem && problem.allowedLanguages?.length ? problem.allowedLanguages : [language];
   return {
     slug: problem.slug,
     title: problem.title,
@@ -87,28 +114,46 @@ export function toPracticeProblem(problem: LearnerProblemSummary | LearnerBatchP
     skills: problem.skills,
     estimatedMinutes: problem.estimatedMinutes,
     defaultLanguage: language,
-    allowedLanguages: detail?.allowedLanguages ?? [language],
+    allowedLanguages: allowed,
     starterCode: detail?.starterCode,
+    starterFiles: detail?.starterFiles,
     sampleTests: detail?.sampleTests,
+    powerBi: detail?.powerBi,
   };
 }
 
-export function useLearnerCatalog(technologySlug: string) {
-  const [state, setState] = useState<{ institution: LearnerInstitution | null; items: LearnerProblemSummary[] }>({ institution: null, items: [] });
+let catalogRequest: Promise<LearnerInstitution | null> | null = null;
+let stacksRequest: Promise<void> | null = null;
 
-  useEffect(() => {
-    let alive = true;
-    learnerGet<{ institution: LearnerInstitution | null; items: LearnerProblemSummary[] }>(`/learner/problems?technology=${encodeURIComponent(technologySlug)}`)
+export function loadCatalog(): Promise<LearnerInstitution | null> {
+  if (!catalogRequest) {
+    catalogRequest = learnerGet<CatalogResponse>('/learner/catalog')
       .then((data) => {
-        if (alive) setState({ institution: data.institution, items: data.items.filter((item) => !getProblemBySlug(item.slug)) });
+        setCatalog(data.problems.map(toPracticeProblem), data.practicePaths);
+        return data.institution;
       })
-      .catch(() => undefined);
-    return () => {
-      alive = false;
-    };
-  }, [technologySlug]);
+      .catch((error) => {
+        catalogRequest = null;
+        throw error;
+      });
+  }
+  return catalogRequest;
+}
 
-  return state;
+export function loadStacks(): Promise<void> {
+  if (!stacksRequest) {
+    stacksRequest = learnerGet<StacksResponse>('/learner/stacks')
+      .then((data) => setStacks(data.domains, data.stacks, data.roadmaps, data.mappings))
+      .catch((error) => {
+        stacksRequest = null;
+        throw error;
+      });
+  }
+  return stacksRequest;
+}
+
+export function useLearnerCatalog(_technologySlug: string) {
+  return { institution: null as LearnerInstitution | null, items: [] as LearnerProblemSummary[] };
 }
 
 export function useRemoteProblem(slug: string | null) {
@@ -118,11 +163,16 @@ export function useRemoteProblem(slug: string | null) {
   useEffect(() => {
     if (!slug) return;
     let alive = true;
+    setLoading(true);
     learnerGet<LearnerProblemDetail>(`/learner/problems/${encodeURIComponent(slug)}`)
       .then((data) => {
-        if (alive) setProblem(toPracticeProblem(data));
+        const full = toPracticeProblem(data);
+        upsertProblem(full);
+        if (alive) setProblem(full);
       })
-      .catch(() => undefined)
+      .catch(() => {
+        if (alive) setProblem(null);
+      })
       .finally(() => {
         if (alive) setLoading(false);
       });

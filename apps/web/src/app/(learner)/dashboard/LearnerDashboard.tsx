@@ -3,7 +3,6 @@
 import type { ReactNode } from 'react';
 
 import {
-  Braces,
   BrainCircuit,
   ChevronRight,
   Cloud,
@@ -11,12 +10,9 @@ import {
   Database,
   GitBranch,
   Layers3,
-  LogOut,
   Search,
   Server,
   Sparkles,
-  Trophy,
-  UserRound,
   X,
   Zap,
 } from 'lucide-react';
@@ -609,22 +605,6 @@ export default function DashboardPage() {
       : [activeCategory];
 
   /* =======================================================
-     LOGOUT
-  ======================================================= */
-
-  const logout = () => {
-    localStorage.removeItem(
-      'elab_dummy_auth',
-    );
-
-    localStorage.removeItem(
-      'elab_dummy_user',
-    );
-
-    router.replace('/login');
-  };
-
-  /* =======================================================
      OPEN TECHNOLOGY
   ======================================================= */
 
@@ -642,138 +622,6 @@ export default function DashboardPage() {
 
   return (
     <main className={styles.page}>
-      {/* =================================================
-          HEADER
-      ================================================= */}
-
-      <header className={styles.header}>
-        <div
-          className={
-            styles.headerInner
-          }
-        >
-          {/* LOGO */}
-
-          <div
-            className={
-              styles.logoArea
-            }
-          >
-            <div
-              className={
-                styles.logoIcon
-              }
-            >
-              <Braces />
-            </div>
-
-            <div
-              className={
-                styles.logo
-              }
-            >
-              e<span>Lab</span>
-            </div>
-          </div>
-
-          {/* MAIN NAV */}
-
-          <nav className={styles.nav}>
-            <button
-              className={`${styles.navItem} ${styles.navActive}`}
-            >
-              <Code2 />
-
-              <span>
-                Start Practicing
-              </span>
-            </button>
-
-            <button
-              className={
-                styles.navItem
-              }
-              onClick={() =>
-                router.push(
-                  '/stacks',
-                )
-              }
-            >
-              <Layers3 />
-
-              <span>
-                Targeted Stack
-              </span>
-            </button>
-
-            <button
-              className={
-                styles.navItem
-              }
-              onClick={() =>
-                router.push(
-                  '/challenges',
-                )
-              }
-            >
-              <Trophy />
-
-              <span>
-                Real-Time Challenges
-              </span>
-            </button>
-          </nav>
-
-          {/* ACCOUNT */}
-
-          <div
-            className={
-              styles.accountArea
-            }
-          >
-            <div
-              className={
-                styles.avatar
-              }
-            >
-              <UserRound />
-            </div>
-
-            <div
-              className={
-                styles.accountText
-              }
-            >
-              <span
-                className={
-                  styles.accountName
-                }
-              >
-                Learner
-              </span>
-
-              <span
-                className={
-                  styles.accountRole
-                }
-              >
-                Practice Workspace
-              </span>
-            </div>
-
-            <button
-              className={
-                styles.logoutButton
-              }
-              onClick={logout}
-              aria-label="Logout"
-            >
-              <LogOut />
-            </button>
-          </div>
-        </div>
-      </header>
-
       {/* =================================================
           MAIN CONTENT
       ================================================= */}

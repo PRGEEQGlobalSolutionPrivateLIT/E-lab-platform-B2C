@@ -3,12 +3,7 @@
 import {
   ArrowLeft,
   ArrowRight,
-  Braces,
-  Code2,
   Layers3,
-  LogOut,
-  Trophy,
-  UserRound,
 } from 'lucide-react';
 
 import {
@@ -63,22 +58,6 @@ export default function DomainPage() {
     }
   }, [router]);
 
-  /* =======================================================
-     LOGOUT
-  ======================================================= */
-
-  const logout = () => {
-    localStorage.removeItem(
-      'elab_dummy_auth',
-    );
-
-    localStorage.removeItem(
-      'elab_dummy_user',
-    );
-
-    router.replace('/login');
-  };
-
   if (!domain) {
     return (
       <main className={styles.page}>
@@ -115,131 +94,7 @@ export default function DomainPage() {
     <main className={styles.page}>
       {/* HEADER */}
 
-      <header className={styles.header}>
-        <div
-          className={
-            styles.headerInner
-          }
-        >
-          <button
-            className={
-              styles.logoArea
-            }
-            onClick={() =>
-              router.push(
-                '/dashboard',
-              )
-            }
-          >
-            <div
-              className={
-                styles.logoIcon
-              }
-            >
-              <Braces />
-            </div>
-
-            <div
-              className={
-                styles.logo
-              }
-            >
-              e<span>Lab</span>
-            </div>
-          </button>
-
-          <nav
-            className={
-              styles.navShell
-            }
-          >
-            <button
-              className={
-                styles.navButton
-              }
-              onClick={() =>
-                router.push(
-                  '/dashboard',
-                )
-              }
-            >
-              <Code2 />
-              Start Practicing
-            </button>
-
-            <button
-              className={`${styles.navButton} ${styles.activeNav}`}
-              onClick={() =>
-                router.push(
-                  '/stacks',
-                )
-              }
-            >
-              <Layers3 />
-              Targeted Stack
-            </button>
-
-            <button
-              className={
-                styles.navButton
-              }
-              onClick={() =>
-                router.push(
-                  '/challenges',
-                )
-              }
-            >
-              <Trophy />
-              Real-Time Challenges
-            </button>
-          </nav>
-
-          <div
-            className={
-              styles.userArea
-            }
-          >
-            <div
-              className={
-                styles.avatar
-              }
-            >
-              <UserRound />
-            </div>
-
-            <div
-              className={
-                styles.userText
-              }
-            >
-              <span
-                className={
-                  styles.userName
-                }
-              >
-                Learner
-              </span>
-
-              <span
-                className={
-                  styles.userRole
-                }
-              >
-                Practice Workspace
-              </span>
-            </div>
-
-            <button
-              className={
-                styles.logout
-              }
-              onClick={logout}
-            >
-              <LogOut />
-            </button>
-          </div>
-        </div>
-      </header>
+      
 
       {/* MAIN */}
 
