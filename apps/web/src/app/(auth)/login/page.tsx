@@ -2,20 +2,10 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-
-import { ArrowRight, Braces, Code2, Eye, EyeOff, Layers3, LockKeyhole, Mail, ShieldCheck, Trophy } from "lucide-react";
-
+import { ArrowRight, Braces, Code2, Eye, EyeOff, Layers3, LockKeyhole, Mail, Trophy } from "lucide-react";
 import { loginRequest } from "@/features/auth/api";
-import { DEMO_ACCOUNTS, saveSession, type UserRole } from "@/features/auth/session";
-
+import { saveSession } from "@/features/auth/session";
 import styles from "./login.module.css";
-
-const ROLE_LABELS: Record<UserRole, string> = {
-  learner: "Learner",
-  "super-admin": "Super admin",
-  "platform-admin": "Platform admin",
-  "institute-admin": "Institute admin",
-};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,7 +25,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const user = await loginRequest(email.trim(), password);
+      const user = await loginRequest(email.trim(), password, () => setError("Waking up the server, this can take up to a minute..."));
 
       saveSession({ email: user.email, role: user.role, mustChangePassword: user.mustChangePassword });
 
@@ -179,35 +169,6 @@ export default function LoginPage() {
                 {!isLoading && <ArrowRight size={17} strokeWidth={2.2} />}
               </button>
             </form>
-
-            <div className={styles.demo}>
-              <div className={styles.demoHead}>
-                <div className={styles.demoIcon}>
-                  <ShieldCheck size={18} />
-                </div>
-                <p className={styles.demoTitle}>Demo access · click to fill</p>
-              </div>
-              <div className={styles.demoList}>
-                {DEMO_ACCOUNTS.map((account) => (
-                  <button
-                    key={account.email}
-                    type="button"
-                    className={styles.demoAccount}
-                    onClick={() => {
-                      setEmail(account.email);
-                      setPassword(account.password);
-                      setError("");
-                      if (!account.password) document.getElementById("password")?.focus();
-                    }}>
-                    <span className={styles.demoRole}>{ROLE_LABELS[account.role]}</span>
-                    <span className={styles.demoCredentials}>
-                      <span>{account.email}</span>
-                      {account.password && <span className={styles.demoPassword}>{account.password}</span>}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
 
             <p className={styles.footer}>eLab • Engineering Practice Platform</p>
           </div>

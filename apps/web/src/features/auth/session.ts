@@ -6,18 +6,6 @@ export interface Session {
   mustChangePassword?: boolean;
 }
 
-export interface DemoAccount {
-  email: string;
-  role: UserRole;
-  password: string;
-}
-
-export const DEMO_ACCOUNTS: readonly DemoAccount[] = [
-  { email: 'learner@elab.com', role: 'learner', password: process.env.NEXT_PUBLIC_DEMO_LEARNER_PASSWORD ?? '' },
-  { email: 'superadmin@elab.com', role: 'super-admin', password: process.env.NEXT_PUBLIC_DEMO_SUPERADMIN_PASSWORD ?? '' },
-  { email: 'platformadmin@elab.com', role: 'platform-admin', password: process.env.NEXT_PUBLIC_DEMO_PLATFORMADMIN_PASSWORD ?? '' },
-];
-
 const AUTH_KEY = 'elab_dummy_auth';
 const USER_KEY = 'elab_dummy_user';
 const ROLE_KEY = 'elab_dummy_role';
