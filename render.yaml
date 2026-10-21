@@ -12,7 +12,8 @@ services:
     runtime: node
     plan: free
     region: singapore
-    buildCommand: npm install -g pnpm@12.4.1 && pnpm install --frozen-lockfile && pnpm --filter api exec prisma generate && pnpm --filter api exec prisma migrate deploy && pnpm --filter api build
+    branch: deployment/digitalocean
+    buildCommand: npm install -g pnpm@12.4.1 && pnpm install --frozen-lockfile && pnpm --filter api exec prisma generate && pnpm --filter api exec prisma migrate deploy && pnpm --filter api exec node prisma/seed-catalog.mjs && pnpm --filter api build
     startCommand: node apps/api/dist/main.js
     healthCheckPath: /api/v1/status
     envVars:
@@ -44,6 +45,7 @@ services:
     runtime: node
     plan: free
     region: singapore
+    branch: deployment/digitalocean
     buildCommand: npm install -g pnpm@12.4.1 && pnpm install --frozen-lockfile && pnpm --filter web build
     startCommand: pnpm --filter web start
     envVars:
